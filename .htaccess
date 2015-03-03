@@ -1,0 +1,9 @@
+RewriteEngine On
+
+<IfModule mod_headers.c>
+	Header always unset Server
+	Header always unset Connection
+</IfModule>
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule (.*) wadadli/bin/wadadli.php

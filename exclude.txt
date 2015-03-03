@@ -1,0 +1,8 @@
+.git
+*kdev*
+deploy.sh
+exclude.txt
+imports
+uploads
+doc
+test
