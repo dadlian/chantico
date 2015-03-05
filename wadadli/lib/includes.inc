@@ -55,6 +55,9 @@
 	require_once(dirname(__FILE__)."/model/gateway/Searcher.inc");
 	require_once(dirname(__FILE__)."/model/gateway/Sorter.inc");
 	
+	require_once(dirname(__FILE__)."/model/http/WadadpiRequest.inc");
+	require_once(dirname(__FILE__)."/model/http/WadadpiResponse.inc");
+	
 	require_once(dirname(__FILE__)."/model/system/Action.inc");
 	require_once(dirname(__FILE__)."/model/system/Settings.inc");
 	require_once(dirname(__FILE__)."/model/system/URLPattern.inc");

@@ -48,5 +48,14 @@
 				<charsets>utf-8</charsets>
 			</values>
 		</settings>
+		<settings>
+			<name>options</name>
+			<values>
+				<api>localhost/gbsv-api</api>
+				<api-key></api-key>
+				<api-secret></api-secret>
+				<access-lifetime>10</access-lifetime>
+			</values>
+		</settings>
 	</settingslist>
 </mapping>

@@ -55,6 +55,11 @@
 					$tokensPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/users\/[0-9]{14}\/tokens";
 					$this->assertPattern("/$tokensPattern/",$responseBody["tokens"],"A successfully created user resource includes an invalid tokens link: {$responseBody['tokens']}");
 				}
+				
+				$this->assertTrue(array_key_exists("options",$responseBody),"A successfully created user resource does not include an options array.");
+				if(array_key_exists("options",$responseBody)){
+					$this->assertEqual(array(),$responseBody["options"],"A successfully created user resource includes an invalid options array: {$responseBody['options']}");
+				}
 			}
 			
 			/**** Test new user collection retrieval ****/
@@ -127,6 +132,11 @@
 					if(array_key_exists("tokens",$responseBody)){
 						$tokensPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/users\/[0-9]{14}\/tokens";
 						$this->assertPattern("/$tokensPattern/",$responseBody["tokens"],"A successfully retrieved user resource includes an invalid tokens link: {$responseBody['tokens']}");
+					}
+				
+					$this->assertTrue(array_key_exists("options",$responseBody),"A successfully retrieved user resource does not include an options array.");
+					if(array_key_exists("options",$responseBody)){
+						$this->assertEqual(array(),$responseBody["options"],"A successfully retrieved user resource includes an invalid options array: {$responseBody['options']}");
 					}
 				}
 			}
@@ -376,6 +386,11 @@
 					$tokensPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/users\/[0-9]{14}\/tokens";
 					$this->assertPattern("/$tokensPattern/",$responseBody["tokens"],"A successfully retrieved user resource includes an invalid tokens link: {$responseBody['tokens']}");
 				}
+				
+				$this->assertTrue(array_key_exists("options",$responseBody),"A successfully retrieved user resource does not include an options array.");
+				if(array_key_exists("options",$responseBody)){
+					$this->assertEqual(array(),$responseBody["options"],"A successfully retrieved user resource includes an invalid options array: {$responseBody['options']}");
+				}
 			}
 			
 			
@@ -417,6 +432,11 @@
 				if(array_key_exists("tokens",$responseBody)){
 					$tokensPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/users\/[0-9]{14}\/tokens";
 					$this->assertPattern("/$tokensPattern/",$responseBody["tokens"],"A successfully modified user resource includes an invalid tokens link: {$responseBody['tokens']}");
+				}
+				
+				$this->assertTrue(array_key_exists("options",$responseBody),"A successfully modified user resource does not include an options array.");
+				if(array_key_exists("options",$responseBody)){
+					$this->assertEqual(array(),$responseBody["options"],"A successfully modified user resource includes an invalid options array: {$responseBody['options']}");
 				}
 			}
 			
