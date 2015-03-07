@@ -1,6 +1,8 @@
 <?php	
 	function require_all($directory){
-		if(is_dir($directory)){	
+		if(!file_exists($directory)){
+			return;
+		}else if(is_dir($directory)){	
 			RequireUtil::require_directory($directory);
 		}else{	
 			RequireUtil::require_file($directory);
