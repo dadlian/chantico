@@ -1204,7 +1204,7 @@
 			
 			$object = $class->newInstanceArgs($arguments);
 			$object->setId($data['id']);
-			$object->setModified($data['created']);
+			$object->setCreated($data['created']);
 			$object->setModified($data['modified']);
 			
 			//Cache object before returning it
