@@ -6,17 +6,20 @@
 		/** @String */
 		protected $authentication;
 		
-		/** @String */
+		/** @String(max=1024) */
 		protected $accessKey;
 		
-		/** @String */
+		/** @String(max=1024) */
 		protected $accessSecret;
 		
-		/** @String */
+		/** @String(max=1024) */
 		protected $refreshSecret;
 		
-		/** @URL */
+		/** @String(max=1024) */
 		protected $accessEndpoint;
+		
+		/** @Integer */
+		protected $expires;
 		
 		protected function getURI(){
 			return "http://".SettingsManager::getSetting("install","urlroot")."/users/{$this->getId()}";
@@ -32,7 +35,8 @@
 			$eTag .= $this->getAccessKey();
 			$eTag .= $this->getAccessSecret();
 			$eTag .= $this->getRefreshSecret();
-			$eTag .= $this->getAccessURI();
+			$eTag .= $this->getAccessEndpoint();
+			$eTag .= $this->getExpires();
 		
 			return md5($this->getModified().$eTag);
 		}

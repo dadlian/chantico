@@ -34,7 +34,7 @@
 			$isRefreshRequest = preg_match("/^access\/[0-9]+\/tokens$/",RequestHandler::getRequestURI());
 			$isValidRole = $isValidKey && ($token->getRole() == "root" || in_array($token->getRole(),RequestHandler::getEndpoint()->getRoles()));
 			
-			if($isValidRole && ((!$isRefreshRequest && $isValidSecret) || ($isRefreshRequest && $isValidRefresh))){
+			if(($isValidRole && $isValidSecret) || ($isRefreshRequest && $isValidRefresh)){
 				$controllerClass = RequestHandler::getEndpoint()->getController();
 				$controller = new $controllerClass(RequestHandler::getURIArguments());
 				$controller->execute();

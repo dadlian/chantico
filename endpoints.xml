@@ -1,5 +1,48 @@
 <?xml version="1.0"?>
 <mapping>
 	<endpointlist>
+		<endpoint>
+			<name>User Collection</name>
+			<path>users</path>
+			<controller>UserCollection</controller>
+			<roles>
+			</roles>
+			<parameters>
+			</parameters>
+			<requirements>
+				<req1>username</req1>
+				<req2>authentication</req2>
+				<req3>role</req3>
+			</requirements>
+		</endpoint>
+		<endpoint>
+			<name>User Resource</name>
+			<path>users/@</path>
+			<controller>UserResource</controller>
+			<roles>
+				<role1>user</role1>
+			</roles>
+			<parameters>
+				<param1>user</param1>
+			</parameters>
+			<requirements>
+				<req1>username</req1>
+				<req2>authentication</req2>
+				<req3>role</req3>
+			</requirements>
+		</endpoint>
+		<endpoint>
+			<name>User Tokens Resource</name>
+			<path>users/@/tokens</path>
+			<controller>UserTokensResource</controller>
+			<roles>
+				<role1>user</role1>
+			</roles>
+			<parameters>
+				<param1>user</param1>
+			</parameters>
+			<requirements>
+			</requirements>
+		</endpoint>
 	</endpointlist>
 </mapping>

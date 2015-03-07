@@ -53,7 +53,13 @@
 			$this->insertToHeaders("If-None-Match",$eTag);
 		}
 		
-		protected function assureConsistency($date,$eTag){
+		protected function assureConsistency($date=null,$eTag=null){
+			if(!$date || !$eTag){
+				$response = $this->get();
+				$date = $response->viewFromHeaders("Last-Modified");
+				$eTag = $response->viewFromHeaders("ETag");
+			}
+			
 			$httpDate = gmdate("D, d M Y H:i:s",strtotime($date))." GMT";
 			$this->insertToHeaders("If-Unmodified-Since",$httpDate);
 			$this->insertToHeaders("If-Match",$eTag);
@@ -106,8 +112,8 @@
 			}
 			
 			//Build Request Line
-			$singleSlashEndpoint = preg_replace("/\/+/","/",$this->getEndpoint());
-			$request .= "{$this->getMethod()} /$singleSlashEndpoint$queryString HTTP/1.1\r\n";
+			$singleSlashEndpoint = preg_replace("/\/+/","/","/{$this->getEndpoint()}");
+			$request .= "{$this->getMethod()} $singleSlashEndpoint$queryString HTTP/1.1\r\n";
 			
 			//Build Headers
 			$request .= "Host: {$this->getHost()}\r\n";
@@ -142,6 +148,7 @@
 					$responseString .= fgets($remoteConnection, 1024);
 				}
 				
+
 				if(is_test_run()){
 					/*echo "\n\n============================================================================================================================\n";
 					echo $responseString;

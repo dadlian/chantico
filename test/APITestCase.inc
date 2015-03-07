@@ -63,7 +63,7 @@
 		}
 		
 		private function generateRootKeyPair(){
-			return array(md5("test"),md5("test"));
+			return array("test","test");
 		}
 	}
 ?>

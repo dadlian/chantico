@@ -565,7 +565,7 @@
 			//If class is not hierarchy root, add foreign key to parent object
 			if($class->getParentClass()->getName() != "PersistentClass"){
 				$parentClassName = $class->getParentClass()->getName();
-				$constraintName = "fk_".substr(strtolower($class->getName()), 0, 25)."_id";
+				$constraintName = "fk_".SettingsManager::getSetting("database","tableprefix")."_".substr(strtolower($class->getName()), 0, 25)."_id";
 				$createStatement .= "CONSTRAINT $constraintName FOREIGN KEY (id) 
 							REFERENCES $parentClassName (id) ON DELETE CASCADE ON UPDATE CASCADE,";
 			}
@@ -575,7 +575,7 @@
 				if($property->getAnnotation()->isObject()){
 					$propertyName = $property->getName();
 					$objectTable = $property->getAnnotation()->getObjectClass();
-					$constraintName = "fk_".substr(strtolower($class->getName()),0,25).substr("_$propertyName",0,20);
+					$constraintName = "fk_".SettingsManager::getSetting("database","tableprefix")."_".substr(strtolower($class->getName()),0,25).substr("_$propertyName",0,20);
 					$createStatement .= "CONSTRAINT $constraintName FOREIGN KEY ($propertyName) REFERENCES $objectTable (id) 
 								ON DELETE SET NULL ON UPDATE CASCADE,";
 				}
@@ -630,7 +630,7 @@
 					$objectClass = Mirror::reflectClass($nextAnnotation->getObjectClass());
 					$this->manageTableForClass($objectClass);
 					
-					$constraintName = "fk_".substr(strtolower($tableName),0,25)."_value";
+					$constraintName = "fk_".SettingsManager::getSetting("database","tableprefix")."_".substr(strtolower($tableName),0,25)."_value";
 					$createStatement .= "value VARCHAR(20),CONSTRAINT $constraintName
 								FOREIGN KEY (value) REFERENCES {$objectClass->getName()} (id) 
 								ON UPDATE CASCADE ON DELETE CASCADE,";
@@ -641,12 +641,12 @@
 				
 				$tableAbbr = substr(strtolower($tableName), 0, 15).substr(strtolower($tableName), strlen($tableName)-10,strlen($tableName));
 				if($i > 0){
-					$constraintName = "fk_".$tableAbbr."_parentlist";
+					$constraintName = "fk_".SettingsManager::getSetting("database","tableprefix")."_".$tableAbbr."_parentlist";
 					$createStatement .= "CONSTRAINT $constraintName FOREIGN KEY (parentList) REFERENCES ".
 							     substr($tableName, 0, strlen($tableName) - 4).
 							     " (id) ON UPDATE CASCADE ON DELETE CASCADE)ENGINE=INNODB";
 				}else{
-					$constraintName = "fk_".$tableAbbr."_".substr(strtolower($className),0,20);
+					$constraintName = "fk_".SettingsManager::getSetting("database","tableprefix")."_".$tableAbbr."_".substr(strtolower($className),0,20);
 					$createStatement .= "CONSTRAINT $constraintName FOREIGN KEY (".strtolower($className).") REFERENCES $className (id)".
 							     " ON UPDATE CASCADE ON DELETE CASCADE)ENGINE=INNODB";
 				}
@@ -725,7 +725,7 @@
 					
 					//If column was previously object and no longer is, drop foreign key
 					if($oldColumnKey == "MUL" && !$property->getAnnotation()->isObject()){
-						$columnKey = "fk_".substr(strtolower($tableName),0,25).substr("_$propertyName",0,20);
+						$columnKey = "fk_".SettingsManager::getSetting("database","tableprefix")."_".substr(strtolower($tableName),0,25).substr("_$propertyName",0,20);
 						DatabaseAdministrator::execute("ALTER TABLE $tableName DROP FOREIGN KEY $columnKey");
 						DatabaseAdministrator::execute("ALTER TABLE $tableName DROP KEY $columnKey");
 					}
@@ -739,7 +739,7 @@
 					
 				//If column has changed to object add foreign key
 				if($changed && $property->getAnnotation()->isObject()){
-					$columnKey = "fk_".substr(strtolower($tableName),0,25).substr("_$propertyName",0,20);
+					$columnKey = "fk_".SettingsManager::getSetting("database","tableprefix")."_".substr(strtolower($tableName),0,25).substr("_$propertyName",0,20);
 					$objectTable = $property->getAnnotation()->getObjectClass();
 					DatabaseAdministrator::execute("ALTER TABLE $tableName ADD CONSTRAINT $columnKey 
 									FOREIGN KEY ($propertyName) REFERENCES $objectTable (id) 
@@ -827,7 +827,7 @@
 						
 						//If there is a key on the changed column drop it
 						if($storedKey == "MUL"){
-							$columnKey = "fk_".$tableAbbr."_value";
+							$columnKey = "fk_".SettingsManager::getSetting("database","tableprefix")."_".$tableAbbr."_value";
 							DatabaseAdministrator::execute("ALTER TABLE $tableName 
 												DROP FOREIGN KEY $columnKey");
 							DatabaseAdministrator::execute("ALTER TABLE $tableName DROP KEY $columnKey");	
@@ -839,7 +839,7 @@
 						
 						//If new column is object or collection add Foreign Key to class table
 						if($nextAnnotation->isObject()){
-							$columnKey = "fk_{$tableAbbr}_value";
+							$columnKey = "fk_".SettingsManager::getSetting("database","tableprefix")."_{$tableAbbr}_value";
 							if($nextAnnotation->isObject()){;
 								$this->manageTableForClass(Mirror::reflectClass($nextAnnotation->getObjectClass()));
 								$foreignKeyTable = $nextAnnotation->getObjectClass();

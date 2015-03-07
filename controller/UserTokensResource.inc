@@ -1,5 +1,5 @@
 <?php
-	class OrganisationCasesResource extends PagedResourceController{
+	class UserTokensResource extends UserController{
 		protected function isInvalid(){
 			return array();
 		}
@@ -13,95 +13,59 @@
 			return $invalidQueryParameters;
 		}
 		
-		protected function getRecordCount(){
-			$count = 0;
-			if(DatabaseAdministrator::tableExists("CaseReport")){
-				$organisation = $this->getResourceObject("Organisation","slug",$this->viewFromArguments("organisation"));
-				if($organisation->isGlobalAccess()){
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as cases FROM CaseReport");
-				}else{
+		protected function get(){
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			
+			$authentication = RequestHandler::getAuthorisation();
+			$username = $authentication["key"];
+			$password = $authentication["secret"];
+			
+			//Retrieve user access resource
+			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+			$request->setEndpoint($user->getAccessEndpoint());
+			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+			$request->setContentType("application/json");
+			$response = $request->get();
+			
+			if($response->getStatusCode() != 200){
+				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
+			}
+			
+			$access = json_decode($response->getBody(),true);
+			
+			if($user->getExpires() <= time()){
+				//Refresh the user token
+				$accessEndpoint = parse_url($access["tokens"],PHP_URL_PATH);
+				$request->setEndpoint($accessEndpoint);
+				$request->authorise($this->decrypt($user->getAccessKey(),$password),$this->decrypt($user->getRefreshSecret(),$password));
+				$request->setBody(json_encode(array("lifetime"=>SettingsManager::getSetting("options","lifetime"))));
+				$response = $request->post();
+				if($response->getStatusCode() == 201){
+					$body = json_decode($response->getBody(),true);
+					$accessKey = $body["key"];
+					$accessSecret = $body["secret"];
+					$refreshSecret = $body["refresh"];
+					$lifetime = $body["lifetime"];
+					
+					//Save User to Chantico
+					$user->setAccessKey($this->encrypt($accessKey,$password));
+					$user->setAccessSecret($this->encrypt($accessSecret,$password));
+					$user->setRefreshSecret($this->encrypt($refreshSecret,$password));
+					$user->setExpires(time()+$lifetime);
+					
 					$sqlGateway = new SQLGateway();
-					$searcher = new Searcher();
-					$searcher->addCriterion("organisations",Criterion::INCLUDES,$organisation);
-					$groupIds = array();
-					foreach($sqlGateway->find("OrganisationGroup",$searcher) as $group){
-						$groupIds[] = $group->getId();
-					}
-					
-					$query = "SELECT COUNT(id) as cases FROM CaseReport WHERE filedBy = {$organisation->getId()}";
-					if($groupIds){
-						$query .= " OR id IN (SELECT casereport FROM CaseReportReferees WHERE value IN (".implode(",",$groupIds)."))";
-					}
-					
-					$countResult = DatabaseAdministrator::execute($query);
+					$sqlGateway->save($user);
 				}
-				$count = $countResult[0]["cases"];
-			}
-			
-			return $count;
-		}
-		
-		protected function buildPageEntries($start,$count){
-			$payload = array();
-			
-			$sqlGateway = new SQLGateway();
-			$organisation = $this->getResourceObject("Organisation","slug",$this->viewFromArguments("organisation"));
-			if($organisation->isGlobalAccess()){
-				$cases = $sqlGateway->find("Cases",new Searcher(),new Sorter(),$count,$start);
-			}else{
-				$sqlGateway = new SQLGateway();
-				$searcher = new Searcher();
-				$searcher->addCriterion("organisations",Criterion::INCLUDES,$organisation);
-				$groupIds = array();
-				foreach($sqlGateway->find("OrganisationGroup",$searcher) as $group){
-					$groupIds[] = $group->getId();
-				}
-				
-				$query = "SELECT id FROM CaseReport WHERE filedBy = {$organisation->getId()}";
-				if($groupIds){
-					$query .= " OR id IN (SELECT casereport FROM CaseReportReferees WHERE value IN (".implode(",",$groupIds)."))";
-				}
-				
-				$caseIds = array();
-				foreach(DatabaseAdministrator::execute($query) as $caseResult){
-					$caseIds[] = $caseResult['id'];
-				}
-				
-				$searcher->clearCriteria();
-				$searcher->addCriterion("id",Criterion::EQUAL,$caseIds);
-				$cases = $sqlGateway->find("CaseReport",$searcher,new Sorter(),$count,$start);
-			}
-			
-			foreach($cases as $case){
-				$payload[] = $this->assemblePayload($case);
-			}
-			
-			return $payload;
-		}
-		
-		protected function assemblePayload($case){
-			$referees = array();
-			foreach($case->getReferees() as $referee){
-				$referees[] = $referee->getURI();
 			}
 			
 			$payload = array(
-				"self"=>$case->getURI(),
-				"number"=>$case->getNumber(),
-				"filed-by"=>$case->getFiledBy(),
-				"referees"=>$referees,
-				"reported-on"=>date("c",$case->getCreated()),
-				"reported-by"=>$case->getReportedBy(),
-				"status"=>$case->getStatus(),
-				"victim"=>"{$case->getURI()}/victim",
-				"perpetrators"=>"{$case->getURI()}/perpetrators",
-				"incident"=>"{$case->getURI()}/incident",
-				"checklist"=>"{$case->getURI()}/checklist",
-				"notes"=>"{$case->getURI()}/notes",
-				"log"=>"{$case->getURI()}/log"
+				"self"=>$this->getBase()."/".RequestHandler::getRequestURI(),
+				"key"=>$this->decrypt($user->getAccessKey(),$password),
+				"secret"=>$this->decrypt($user->getAccessSecret(),$password)
 			);
 			
-			return $payload;
+			ResponseHandler::addExpiry($user->getExpires());
+			ResponseHandler::retrieved($payload,$this->getBase()."/".RequestHandler::getRequestURI(),$user->getModified(),$user->getETag());
 		}
 	}
 ?>

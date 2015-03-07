@@ -87,10 +87,6 @@
 			self::sendError(404,$messages);
 		}
 		
-		protected static function error($messages){
-			self::sendError(404,$messages);
-		}
-		
 		protected static function unsupported($messages){
 			self::sendError(405,$messages);
 		}
@@ -122,6 +118,10 @@
 		
 		protected static function precondition($messages){
 			self::sendError(412,$messages);
+		}
+		
+		protected static function error($messages){
+			self::sendError(500,$messages);
 		}
 		
 		private static function sendError($status, $messages){

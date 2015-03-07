@@ -1,49 +1,68 @@
 <?php
-	class OrganisationResource extends OrganisationController{
+	class UserResource extends UserController{
 		protected function get(){
-			$organisation = $this->getResourceObject("Organisation","slug",$this->viewFromArguments("organisation"));
-			$payload = $this->assemblePayload($organisation);
-			ResponseHandler::retrieved($payload,$organisation->getURI(),$organisation->getModified(),$organisation->getETag());
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$payload = $this->assemblePayload($user);
+			ResponseHandler::retrieved($payload,$user->getURI(),$user->getModified(),$user->getETag());
 		}
 		
 		protected function put(){
-			$organisation = $this->getResourceObject("Organisation","slug",$this->viewFromArguments("organisation"));
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 		
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
-			$searcher->addCriterion("name",Criterion::EQUAL,$this->getFromContent("name"));
-			$searcher->addCriterion("id",Criterion::NOT_EQUAL,$organisation->getId());
-			if($sqlGateway->findUnique("Organisation",$searcher)){
-				ResponseHandler::conflict("An organisation named '{$this->getFromContent('name')}' already exists.");
+			$searcher->addCriterion("username",Criterion::EQUAL,$this->getFromContent("username"));
+			$searcher->addCriterion("id",Criterion::NOT_EQUAL,$user->getId());
+			if($sqlGateway->findUnique("ManagedAccess",$searcher)){
+				ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
 			}
-		
-			$organisation->setName($this->getFromContent("name"));
-			$organisation->setActive($this->getFromContent("active",true));
 			
-			$sqlGateway = new SQLGateway();
-			$sqlGateway->save($organisation);
+			$authentication = RequestHandler::getAuthorisation();
+			$username = $authentication["key"];
+			$password = $authentication["secret"];
 			
-			$payload = $this->assemblePayload($organisation);
-			ResponseHandler::modified($payload,$organisation->getURI());
+			//Update Access
+			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+			$request->setEndpoint($user->getAccessEndpoint());
+			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+			$request->setContentType("application/json");
+			$request->assureConsistency();
+			$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
+			$request->setBody($payload);
+			$response = $request->put();
+			$body = json_decode($response->getBody(),true);
+			
+			if($response->getStatusCode() == 400){
+				ResponseHandler::bad($body["message"]);
+			}else if($response->getStatusCode() != 200){
+				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
+			}
+			
+			//Save user changes to Chantico
+			$user->setUsername($this->getFromContent("username"));
+			$user->setAuthentication(md5($this->getFromContent("authentication")));
+			$sqlGateway->save($user);
+			
+			//Update APIToken for User to Access its tokens
+			$apiToken = RequestHandler::getAuthenticatedToken();
+			$apiToken->setAccessKey(md5($user->getUsername()));
+			$apiToken->setAccessSecret($user->getAuthentication());
+			$apiToken->setRefreshSecret($user->getAuthentication());
+			$sqlGateway->save($apiToken);
+			
+			$payload = $this->assemblePayload($user);
+			ResponseHandler::modified($payload,$user->getURI());
 		}
 		
 		protected function delete(){
-			$organisation = $this->getResourceObject("Organisation","slug",$this->viewFromArguments("organisation"));
-			
-			//Prevent deletion of organisations with filed cases
-			$caseResult = DatabaseAdministrator::execute("SELECT COUNT(id) as cases FROM CaseReport WHERE filedBy = ?",$organisation->getId());
-			$cases = $caseResult[0]["cases"];
-			if($cases > 0){
-				ResponseHandler::conflict("Organisation: /".RequestHandler::getRequestURI()." has $cases filed case".(($cases>1)?"s":"")." and cannot be deleted.");
-			}
-			
-			CryptKeeper::bury($organisation);
-			ResponseHandler::deleted("Organisation: /".RequestHandler::getRequestURI().", has been removed.");
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			CryptKeeper::bury($user);
+			ResponseHandler::deleted("User: /".RequestHandler::getRequestURI().", has been removed.");
 		}
 	
 		protected function isConsistent($modifiedDate,$eTag){
-			$organisation = $this->getResourceObject("Organisation","slug",$this->viewFromArguments("organisation"));
-			return $modifiedDate == $organisation->getModified() && $eTag == $organisation->getETag();
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			return $modifiedDate == $user->getModified() && $eTag == $user->getETag();
 		}
 	}
 ?>

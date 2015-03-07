@@ -3,11 +3,11 @@
 		function testSuccessfulUserCollectionManipulation(){
 			/**** Test new user creation ****/
 			$username = "tester";
-			$password = md5("tester");
+			$password = "tester";
 			$role = "tester";
 			
 			$this->request->setEndpoint("/users");
-			$payload = json_encode(array("username"=>$username,"password"=>$password,"role"=>$role));
+			$payload = json_encode(array("username"=>$username,"authentication"=>$password,"role"=>$role));
 			$this->request->setBody($payload);
 			$response = $this->request->post();
 			
@@ -17,7 +17,7 @@
 			
 			//Test for Mandatory Headers
 			$datePattern = "/".gmdate("D, d M Y")." [0-2][0-9]:[0-5][0-9]:[0-5][0-9] GMT/";
-			$locationPattern = "/http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."/users/[0-9]{14}"))."/";
+			$locationPattern = "/http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."/users/"))."[0-9]{14}/";
 			
 			$this->assertPattern($datePattern,$response->viewFromHeaders("Date"),"Successful user creation responds with a malformed or incorrect Date Header: {$response->viewFromHeaders('Date')}");
 			$this->assertEqual(strlen($response->getBody()),$response->viewFromHeaders("Content-Length"),"Successful user creation responds with the incorrect Content-Length: ".$response->viewFromHeaders("Content-Length"));
@@ -25,7 +25,7 @@
 			
 			//Test for Resource Specific Headers
 			$this->assertPattern($locationPattern,$response->viewFromHeaders("Location"),"Successful user creation responds with the incorrect Location: ".$response->viewFromHeaders("Location"));
-						
+			
 			//Ensure there are no unexpected Headers
 			$this->assertEqual(8,sizeof($response->getHeaders()),"Successful user creation responds with superfluous headers (6 expected, ".sizeof($response->getHeaders())." given)");
 			
@@ -58,7 +58,7 @@
 				
 				$this->assertTrue(array_key_exists("options",$responseBody),"A successfully created user resource does not include an options array.");
 				if(array_key_exists("options",$responseBody)){
-					$this->assertEqual(array(),$responseBody["options"],"A successfully created user resource includes an invalid options array: {$responseBody['options']}");
+					$this->assertEqual(array(),$responseBody["options"],"A successfully created user resource includes an invalid options array: ".implode(",",$responseBody['options']));
 				}
 			}
 			
@@ -66,22 +66,22 @@
 			
 			//Add sample users
 			$username = array("tester1","tester2","tester3");
-			$password = array(md5("tester"),md5("tester"),md5("tester"));
+			$password = array("tester","tester","tester");
 			$role = array("tester","tester","tester");
 			
 			$this->initialiseRequest();
 			$this->request->setEndpoint("/users");
-			$this->request->setBody(json_encode(array("username"=>$username[0],"password"=>$password[0],"role"=>$role[0],"options"=>array())));
+			$this->request->setBody(json_encode(array("username"=>$username[0],"authentication"=>$password[0],"role"=>$role[0],"options"=>array())));
 			$this->request->post()->viewFromHeaders("Location");
 			
 			$this->initialiseRequest();
 			$this->request->setEndpoint("/users");
-			$this->request->setBody(json_encode(array("username"=>$username[1],"password"=>$password[1],"role"=>$role[1],"options"=>array())));
+			$this->request->setBody(json_encode(array("username"=>$username[1],"authentication"=>$password[1],"role"=>$role[1],"options"=>array())));
 			$this->request->post()->viewFromHeaders("Location");
 			
 			$this->initialiseRequest();
 			$this->request->setEndpoint("/users");
-			$this->request->setBody(json_encode(array("username"=>$username[2],"password"=>$password[2],"role"=>$role[2],"options"=>array())));
+			$this->request->setBody(json_encode(array("username"=>$username[2],"authentication"=>$password[2],"role"=>$role[2],"options"=>array())));
 			$this->request->post()->viewFromHeaders("Location");
 			
 			//Get full users collection
@@ -114,7 +114,7 @@
 					
 					$this->assertTrue(array_key_exists("self",$responseBody),"A successfully retrieved user resource does not include a self link.");
 					if(array_key_exists("self",$responseBody)){
-						$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/users\/{[0-9]{14}[$index]}";
+						$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot)."/users/")."[0-9]{14}";
 						$this->assertPattern("/$userPattern/",$responseBody["self"],"A successfully retrieved user resource includes an invalid self link: {$responseBody['self']}");
 					}
 					
@@ -136,7 +136,7 @@
 				
 					$this->assertTrue(array_key_exists("options",$responseBody),"A successfully retrieved user resource does not include an options array.");
 					if(array_key_exists("options",$responseBody)){
-						$this->assertEqual(array(),$responseBody["options"],"A successfully retrieved user resource includes an invalid options array: {$responseBody['options']}");
+						$this->assertEqual(array(),$responseBody["options"],"A successfully retrieved user resource includes an invalid options array: ".implode(",",$responseBody['options']));
 					}
 				}
 			}
@@ -174,6 +174,49 @@
 					$this->assertEqual(1,sizeof($responseBody["entries"]),"A successfully retrieved paginated user collection includes the incorrect number of users: ".sizeof($responseBody['entries']));
 				}
 			}
+			
+			//Get paged user collection by username
+			$this->initialiseRequest();
+			$this->request->setEndpoint("/users");
+			$this->request->insertToArguments("page","2");
+			$this->request->insertToArguments("records","1");
+			$this->request->insertToArguments("usernames","{$username[0]},{$username[2]}");
+			$response = $this->request->get();
+			
+			$this->assertTrue($this->validJSON($response->getBody()),"Retrieving paginated user collection by username does not return valid JSON in the response body.");
+			if($this->validJSON($response->getBody())){
+				$responseBody = json_decode($response->getBody(),true);
+				
+				$this->assertTrue(array_key_exists("self",$responseBody),"A successfully retrieved paginated user collection by username does not include a self link.");
+				if(array_key_exists("self",$responseBody)){
+					$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/users\?page=2&records=1&usernames={$username[0]},{$username[2]}";
+					$this->assertPattern("/$userPattern/",$responseBody["self"],"A successfully retrieved paginated user collection by username includes an invalid self link: {$responseBody['self']}");
+				}
+				
+				$this->assertTrue(array_key_exists("prev",$responseBody),"A successfully retrieved paginated user collection does not include a link to the previous page.");
+				if(array_key_exists("prev",$responseBody)){
+					$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/users\?page=1&records=1&usernames={$username[0]},{$username[2]}";
+					$this->assertPattern("/$userPattern/",$responseBody["prev"],"A successfully retrieved paginated user collection by username includes an invalid link to the previous page: {$responseBody['prev']}");
+				}
+				
+				$this->assertTrue(array_key_exists("total",$responseBody),"A successfully retrieved paginated user collection by username does not include the total record count.");
+				if(array_key_exists("total",$responseBody)){
+					$this->assertEqual(2,$responseBody["total"],"A successfully retrieved paginated user collection by username includes the wrong total record count: {$responseBody['total']}");
+				}
+				
+				$this->assertTrue(array_key_exists("entries",$responseBody),"A successfully retrieved paginated user collection by username does not include an array of users.");
+				if(array_key_exists("entries",$responseBody)){
+					$this->assertEqual(1,sizeof($responseBody["entries"]),"A successfully retrieved paginated user collection by username includes the incorrect number of users: ".sizeof($responseBody['entries']));
+					
+					//Check that contents of the user are valid
+					$responseBody = $responseBody['entries'][0];
+					
+					$this->assertTrue(array_key_exists("username",$responseBody),"A user resource in a paginated user collection by username does not include a username.");
+					if(array_key_exists("username",$responseBody)){
+						$this->assertEqual($username[2],$responseBody["username"],"A user resource in a paginated user collection by username includes the wrong username: {$responseBody['username']}");
+					}
+				}
+			}
 		}
 		
 		function testUserCollectionManipulationHandlesUnsupportedRequests(){
@@ -200,7 +243,7 @@
 			$response = $this->request->get();
 			$this->assertEqual(400,$response->getStatusCode(),"/users endpoint returns incorrect status code for invalid query parameters: {$response->getStatusCode()}");
 			$this->assertEqual("Bad Request",$response->getReason(),"/users endpoint returns incorrect reason for invalid query parameters: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The following query parameters have invalid values: groups, page, records.","Supplying invalid query parameter values to the /users endpoint returns an invalid message");
+			$this->validateErrorMessage($response,"The following query parameters have invalid values: page, records.","Supplying invalid query parameter values to the /users endpoint returns an invalid message");
 		}
 		
 		function testUserCollectionManipulationHandlesMissingOrInvalidArguments(){
@@ -220,35 +263,41 @@
 			$response = $this->request->post();
 			$this->assertEqual(400,$response->getStatusCode(),"/users endpoint returns incorrect status code for missing required arguments: {$response->getStatusCode()}");
 			$this->assertEqual("Bad Request",$response->getReason(),"/users endpoint returns incorrect reason for missing required arguments: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The following arguments are required, but have not been supplied: name.","Failing to supply required arguments to the /users endpoint returns an invalid message");
+			$this->validateErrorMessage($response,"The following arguments are required, but have not been supplied: username, authentication, role.","Failing to supply required arguments to the /users endpoint returns an invalid message");
 			
 			
 			/**** Test Invalid Arguments ****/
-			$payload = json_encode(array("username"=>array("user"),"password"=>"not md5","role"=>false,"options"=>"invalid options"));
+			$payload = json_encode(array("username"=>array("user"),"authentication"=>array(),"role"=>"tester","options"=>"invalid options"));
 			$this->request->setBody($payload);
 			$response = $this->request->post();
 			$this->assertEqual(400,$response->getStatusCode(),"/users endpoint returns incorrect status code for invalid arguments: {$response->getStatusCode()}");
 			$this->assertEqual("Bad Request",$response->getReason(),"/users endpoint returns incorrect reason for invalid arguments: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The following arguments have invalid values: username, password, role, options.","Supplying invalid argument values to the /users endpoint returns an invalid message");
+			$this->validateErrorMessage($response,"The following arguments have invalid values: username, authentication, options.","Supplying invalid argument values to the /users endpoint returns an invalid message");
 			
+			$payload = json_encode(array("username"=>"validuser","authentication"=>"a string password","role"=>"root","options"=>array()));
+			$this->request->setBody($payload);
+			$response = $this->request->post();
+			$this->assertEqual(400,$response->getStatusCode(),"/users endpoint returns incorrect status code for invalid role: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"/users endpoint returns incorrect reason for invalid role: {$response->getReason()}");
+			$this->validateErrorMessage($response,"The following directives have invalid values: role.","Supplying invalid role value to the /users endpoint returns an invalid message");
 			
 			/**** Test Duplicate Argument Values ****/
-			$this->request->setBody(json_encode(array("username"=>"orig_user","password"=>md5("test"),"role"=>"tester")));
+			$this->request->setBody(json_encode(array("username"=>"orig_user","authentication"=>"test","role"=>"tester")));
 			$this->request->post();
 			
 			//Make Duplicate Post
 			$response = $this->request->post();
 			$this->assertEqual(409,$response->getStatusCode(),"Creating a duplicate user resource returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Conflict",$response->getReason(),"Creating a duplicate user resource returns incorrect reason: {$response->getReason()}");
-			$this->validateErrorMessage($response,"An user identified by 'username' already exists.","Creating a duplicate user resource returns an invalid message");
+			$this->validateErrorMessage($response,"A user identified by 'orig_user' already exists.","Creating a duplicate user resource returns an invalid message");
 			
 			
 			/**** Test Invalid Options Directives ****/
-			$this->request->setBody(json_encode(array("username"=>array("username"),"password"=>md5("test"),"role"=>"tester","options"=>array("organisation"=>"http;//google.com"))));
+			$this->request->setBody(json_encode(array("username"=>"another-username","authentication"=>"test","role"=>"tester","options"=>array("organisation"=>"http;//google.com"))));
 			$response = $this->request->post();
-			$this->assertEqual(409,$response->getStatusCode(),"Creating a user resource with invalid directives returns incorrect status code: {$response->getStatusCode()}");
-			$this->assertEqual("Conflict",$response->getReason(),"Creating a user resource with invalid directives returns incorrect reason: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The given options directives are invalid. No user could be created.","Creating a user resource with invalid directives returns an invalid message");
+			$this->assertEqual(400,$response->getStatusCode(),"Creating a user resource with invalid directives returns incorrect status code: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"Creating a user resource with invalid directives returns incorrect reason: {$response->getReason()}");
+			$this->validateErrorMessage($response,"The following directives have invalid values: organisation.","Creating a user resource with invalid directives returns an invalid message");
 		}
 		
 		function testUserCollectionManipulationHandlesUnauthorisedRequests(){
@@ -276,7 +325,7 @@
 			
 			
 			/**** Test that correct content types are returned by default ****/
-			$this->request->setBody(json_encode(array("username"=>array("next_user0"),"password"=>md5("test"),"role"=>"tester")));
+			$this->request->setBody(json_encode(array("username"=>"next_user0","authentication"=>"test","role"=>"tester")));
 			$response = $this->request->post();
 			
 			$this->assertEqual("application/json;charset=utf-8",$response->viewFromHeaders("Content-Type"),"A successful user creation request did not return the correct content representation or charset by default.");
@@ -289,7 +338,7 @@
 			$this->request->addPreferedContentType("application/json");
 			$this->request->addPreferedCharset("UTF-8");
 			$this->request->addPreferedLanguage("en");
-			$this->request->setBody(json_encode(array("username"=>array("next_user1"),"password"=>md5("test"),"role"=>"tester")));
+			$this->request->setBody(json_encode(array("username"=>"next_user1","authentication"=>"test","role"=>"tester")));
 			$response = $this->request->post();
 			
 			$this->assertEqual(201,$response->getStatusCode(),"A successful user creation request for a supported content type did not return a sucessful status code.");
@@ -304,12 +353,12 @@
 			$this->request->addPreferedContentType("application/json");
 			$this->request->addPreferedCharset("UTF-8");
 			$this->request->addPreferedLanguage("ru");
-			$this->request->setBody(json_encode(array("username"=>array("next_user2"),"password"=>md5("test"),"role"=>"tester")));
+			$this->request->setBody(json_encode(array("username"=>"next_user2","authentication"=>"test","role"=>"tester")));
 			$response = $this->request->post();
 			
 			$this->assertEqual(406,$response->getStatusCode(),"Requesting unsupported content types from the /users endpoint returns an incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Not Acceptable",$response->getReason(),"Requesting unsupported content types from the /users endpoint returns an incorrect reason: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The requested end-point does not support charsets: utf-8, languages: ru.","Requesting unsupported content types from the /users endpoint returns an incorrect message");
+			$this->validateErrorMessage($response,"The requested end-point does not support languages: ru.","Requesting unsupported content types from the /users endpoint returns an incorrect message");
 		}
 		
 		function testRetrievalOfUndefinedUserCollectionPages(){
@@ -323,17 +372,17 @@
 			$this->assertEqual(404,$response->getStatusCode(),"Accessing non-existant pages of the /users endpoint returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Not Found",$response->getReason(),"Accessing non-existant pages of the /users endpoint returns incorrect reason: {$response->getReason()}");
 			$this->validateErrorMessage($response,"The specified page does not exist for the given records per page.","Accessing non-existant pages of the /users endpoint returns an invalid message");
-		}
+		}		
 		
 		
 		function testSuccessfulUserManipulation(){
 			//Create a new user resource
-			$username = "tester3";
+			$username = "tester13";
 			$password = "tester";
 			$role = "tester";
 			
 			$this->request->setEndpoint("/users");
-			$payload = json_encode(array("username"=>$username,"password"=>md5($password),"role"=>$role));
+			$payload = json_encode(array("username"=>$username,"authentication"=>$password,"role"=>$role));
 			$this->request->setBody($payload);
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			
@@ -389,7 +438,7 @@
 				
 				$this->assertTrue(array_key_exists("options",$responseBody),"A successfully retrieved user resource does not include an options array.");
 				if(array_key_exists("options",$responseBody)){
-					$this->assertEqual(array(),$responseBody["options"],"A successfully retrieved user resource includes an invalid options array: {$responseBody['options']}");
+					$this->assertEqual(array(),$responseBody["options"],"A successfully retrieved user resource includes an invalid options array: ".implode(",",$responseBody['options']));
 				}
 			}
 			
@@ -399,14 +448,14 @@
 			$this->initialiseRequest();
 			$this->request->setEndpoint($user);
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
-			$this->request->setBody(json_encode(array("username"=>$newUsername,"password"=>md5($newPassword),"role"=>$newRole)));
+			$this->request->setBody(json_encode(array("username"=>$newUsername,"authentication"=>$newPassword,"role"=>$newRole)));
 			$this->request->authorise($username,$password);
 			$response = $this->request->put();
 			
 			//Test for Valid Status Line
 			$this->assertEqual(200,$response->getStatusCode(),"Successful user modification returns the wrong status code: {$response->getStatusCode()}");
 			$this->assertEqual("OK",$response->getReason(),"Successful user modification returns the wrong reason: {$response->getReason()}");
-						
+					
 			//Test for Modified User Content
 			$this->assertTrue($this->validJSON($response->getBody()),"Successful user modification does not return valid JSON in the response body.");
 			if($this->validJSON($response->getBody())){
@@ -436,7 +485,7 @@
 				
 				$this->assertTrue(array_key_exists("options",$responseBody),"A successfully modified user resource does not include an options array.");
 				if(array_key_exists("options",$responseBody)){
-					$this->assertEqual(array(),$responseBody["options"],"A successfully modified user resource includes an invalid options array: {$responseBody['options']}");
+					$this->assertEqual(array(),$responseBody["options"],"A successfully modified user resource includes an invalid options array: ".implode(",",$responseBody['options']));
 				}
 			}
 			
@@ -472,7 +521,7 @@
 			//Test for Valid Status Line
 			$this->assertEqual(200,$response->getStatusCode(),"Successful user deletion returns the wrong status code: {$response->getStatusCode()}");
 			$this->assertEqual("OK",$response->getReason(),"Successful user deletion returns the wrong reason: {$response->getReason()}");
-						
+			
 			//Test for Removed User Response Content
 			$this->validateErrorMessage($response,"User: $user, has been removed.","Removing a /user resource returns an incorrect message");
 			
@@ -482,14 +531,13 @@
 			$this->request->authorise($newUsername,$newPassword);
 			$response = $this->request->get();
 			$this->assertNotEqual(200,$response->getStatusCode(),"A removed user resource is still available in the system after deletion.");
-			
 		}
 		
 		function testUserManipulationHandlesUnsupportedRequests(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			$this->initialiseRequest();
 			$this->request->setEndpoint($user);
@@ -508,8 +556,8 @@
 		function testUserManipulationHandlesMissingOrInvalidArguments(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user_2"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user_2"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			$this->initialiseRequest();
 			$this->request->setEndpoint($user);
@@ -531,51 +579,52 @@
 			$response = $this->request->put();
 			$this->assertEqual(400,$response->getStatusCode(),"/users/{user_id} endpoint returns incorrect status code for missing required arguments: {$response->getStatusCode()}");
 			$this->assertEqual("Bad Request",$response->getReason(),"/users/{user_id} endpoint returns incorrect reason for missing required arguments: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The following arguments are required, but have not been supplied: username, password, role.","Failing to supply required arguments to the /users/{user_id} endpoint returns an invalid message");
+			$this->validateErrorMessage($response,"The following arguments are required, but have not been supplied: username, authentication, role.","Failing to supply required arguments to the /users/{user_id} endpoint returns an invalid message");
 			
 			
 			/**** Test Invalid Arguments ****/
-			$this->request->setBody(json_encode(array("username"=>"no spaces","password"=>$password,"role"=>true,"options"=>false)));
+			$this->request->setBody(json_encode(array("username"=>"no spaces","authentication"=>1234,"role"=>true,"options"=>false)));
 			$response = $this->request->put();
 			$this->assertEqual(400,$response->getStatusCode(),"/users/{user_id} endpoint returns incorrect status code for invalid arguments: {$response->getStatusCode()}");
 			$this->assertEqual("Bad Request",$response->getReason(),"/users/{user_id} endpoint returns incorrect reason for invalid arguments: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The following arguments have invalid values: name, active.","Supplying invalid argument values to the /users/{user_id} endpoint returns an invalid message");
+			$this->validateErrorMessage($response,"The following arguments have invalid values: username, authentication, role, options.","Supplying invalid argument values to the /users/{user_id} endpoint returns an invalid message");
 			
 			
 			/**** Test Duplicate Argument Values ****/
 			$this->initialiseRequest();
 			$this->request->setEndpoint("/users");
-			$username = "test_user_3"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$newUsername = "test_user_3"; $newPassword = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$newUsername,"authentication"=>$newPassword,"role"=>"tester")));
 			$this->request->post();
+			
 			$this->initialiseRequest();
 			$this->request->setEndpoint($user);
 			$this->request->authorise($username,$password);
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
-			$username = "test_user_2"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$newUsername = "test_user_3"; $newPassword = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$newUsername,"authentication"=>$newPassword,"role"=>"tester")));
 			
 			//Make Duplicate Put
 			$response = $this->request->put();
 			$this->assertEqual(409,$response->getStatusCode(),"Updating a user resource with a duplicate name returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Conflict",$response->getReason(),"Updating a user resource with a duplicate name returns incorrect reason: {$response->getReason()}");
-			$this->validateErrorMessage($response,"A user identified by 'test_user_2' already exists.","Updating a user resource with a duplicate name returns an invalid message");
+			$this->validateErrorMessage($response,"A user identified by 'test_user_3' already exists.","Updating a user resource with a duplicate name returns an invalid message");
 			
 						
 			/**** Test Invalid Options Directives ****/
-			$this->request->setBody(json_encode(array("username"=>array("username"),"password"=>md5("test"),"role"=>"tester","options"=>array("organisation"=>false))));
+			$this->request->setBody(json_encode(array("username"=>"new_username","authentication"=>"test","role"=>"tester","options"=>array("organisation"=>false))));
 			$response = $this->request->put();
-			$this->assertEqual(409,$response->getStatusCode(),"Creating a user resource with invalid directives returns incorrect status code: {$response->getStatusCode()}");
-			$this->assertEqual("Conflict",$response->getReason(),"Creating a user resource with invalid directives returns incorrect reason: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The given options directives are invalid. No user could be created.","Creating a user resource with invalid directives returns an invalid message");
+			$this->assertEqual(400,$response->getStatusCode(),"Creating a user resource with invalid directives returns incorrect status code: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"Creating a user resource with invalid directives returns incorrect reason: {$response->getReason()}");
+			$this->validateErrorMessage($response,"The following arguments have invalid values: options.","Creating a user resource with invalid directives returns an invalid message");
 		}
 		
 		function testUserManipulationHandlesUnauthorisedRequests(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user_4"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user_4"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			$this->initialiseRequest();
 			$this->request->setEndpoint($user);
@@ -595,6 +644,7 @@
 			
 			/**** Test Incorrectly Authorised Request ****/
 			$this->initialiseRequest();
+			$this->request->setEndpoint($user);
 			$response = $this->request->put();
 			$this->assertEqual(403,$response->getStatusCode(),"Accessing /users/{user_id} endpoint with unauthorised credentials returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Forbidden",$response->getReason(),"Accessing /users/{user_id} endpoint with unauthorised credentials returns incorrect reason: {$response->getReason()}");
@@ -604,8 +654,8 @@
 		function testUserManipulationNegotiatesContent(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user_5"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user_5"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			
 			
@@ -661,8 +711,8 @@
 		function testUserManipulationConcurrencyChecks(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user_6"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user_6"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			$this->initialiseRequest();
 			$this->request->setEndpoint($user);
@@ -671,7 +721,7 @@
 			
 			
 			/**** Test manipulating a resource without checking concurrency ****/
-			$this->request->setBody(json_encode(array("username"=>"another_user","password"=>md5($password),"role"=>"tester")));
+			$this->request->setBody(json_encode(array("username"=>"another_user","authentication"=>$password,"role"=>"tester")));
 			$response = $this->request->put();
 			$this->assertEqual(403,$response->getStatusCode(),"Trying to manipulate /users/{user_id} endpoint without concurrency headers returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Forbidden",$response->getReason(),"Trying to manipulate /users/{user_id} endpoint without concurrency headers returns incorrect reason: {$response->getReason()}");
@@ -679,11 +729,13 @@
 			
 			
 			/**** Test manipulating a resource with invalid concurrency tags ****/
+			$newUsername = "another_user"; $newPassword = $password;
 			$this->request->assureConsistency($validResponse->viewFromHeaders("Last-Modified"),$validResponse->viewFromHeaders("ETag"));
-			$this->request->setBody(json_encode(array("username"=>"another_user","password"=>md5($password),"role"=>"tester")));
+			$this->request->setBody(json_encode(array("username"=>$newUsername,"authentication"=>$newPassword,"role"=>"tester")));
 			$this->request->put();
 			
 			//Repeat PUT with stale concurrency headers
+			$this->request->authorise($newUsername,$newPassword);
 			$response = $this->request->put();
 			$this->assertEqual(412,$response->getStatusCode(),"Trying to manipulate /users/{user_id} endpoint with stale concurrency headers returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Precondition Failed",$response->getReason(),"Trying to manipulate /users/{user_id} endpoint with stale concurrency headers returns incorrect reason: {$response->getReason()}");
@@ -694,10 +746,9 @@
 		function testSuccessfulUserTokensRetrieval(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user_10"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user_10"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
-			
 			
 			/**** Test User Tokens Resource is correctly retrieved ****/
 			$this->initialiseRequest();
@@ -750,8 +801,8 @@
 		function testUserTokensRetrievalHandlesUnsupportedRequests(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user_11"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user_11"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			$this->initialiseRequest();
 			$this->request->setEndpoint("$user/tokens");
@@ -777,30 +828,11 @@
 			$this->validateErrorMessage($response,"$user/tokens does not support the DELETE method.","Making an unsupported DELETE request to the /users/{user_id}/tokens endpoint returns an invalid message");
 		}
 		
-		function testUserTokensRetrievalHandlesInvalidQueryParameters(){
-			//Create a new user resource
-			$this->request->setEndpoint("/users");
-			$username = "test_user_12"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
-			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
-			$this->initialiseRequest();
-			$this->request->setEndpoint("$user/tokens");
-			$this->request->authorise($username,$password);
-			
-			/**** Test Invalid Query Parameters ****/
-			$this->request->insertToArguments("page","page");
-			$this->request->insertToArguments("records","records");
-			$response = $this->request->get();
-			$this->assertEqual(400,$response->getStatusCode(),"/users/{user_id}/tokens endpoint returns incorrect status code for invalid query parameters: {$response->getStatusCode()}");
-			$this->assertEqual("Bad Request",$response->getReason(),"/users/{user_id}/tokens endpoint returns incorrect reason for invalid query parameters: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The following query parameters have invalid values: page, records.","Supplying invalid query parameter values to the /users/{user_id}/tokens endpoint returns an invalid message");
-		}
-		
 		function testUserTokensRetrievalHandlesUnauthorisedRequests(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user_13"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user_13"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			$this->initialiseRequest();
 			$this->request->setEndpoint("$user/tokens");
@@ -830,8 +862,8 @@
 		function testUserTokensRetrievalNegotiatesContent(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "test_user_14"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "test_user_14"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			
 			
@@ -884,31 +916,12 @@
 			$this->validateErrorMessage($response,"The requested endpoint user/nonexistant/tokens does not exist on this server.","Accessing /users/{user_id}/tokens endpoint with non-existant user_id returns an invalid message");
 		}
 		
-		function testRetrievalOfUndefinedUserTokenPages(){
-			//Create a new user resource
-			$this->request->setEndpoint("/users");
-			$username = "test_user_16"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
-			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
-			
-			/**** Test requesting a non-existant collection page ****/
-			$this->initialiseRequest();
-			$this->request->setEndpoint("$user/tokens");
-			$this->request->insertToArguments("page","1");
-			$this->request->insertToArguments("records","5");
-			$this->request->authorise($username,$password);
-			$response = $this->request->get();
-			
-			$this->assertEqual(404,$response->getStatusCode(),"Accessing non-existant pages of the /users/{user_id}/tokens endpoint returns incorrect status code: {$response->getStatusCode()}");
-			$this->assertEqual("Not Found",$response->getReason(),"Accessing non-existant pages of the /users/{user_id}/tokens endpoint returns incorrect reason: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The specified page does not exist for the given records per page.","Accessing non-existant pages of the /users/{user_id}/tokens endpoint returns an invalid message");
-		}
 		
 		function testUserTokensAreRefreshed(){
 			//Create a new user resource
 			$this->request->setEndpoint("/users");
-			$username = "refresh_user"; $password = "password";
-			$this->request->setBody(json_encode(array("username"=>$username,"password"=>md5($password),"role"=>"tester")));
+			$username = "refresh_user"; $password = "authentication";
+			$this->request->setBody(json_encode(array("username"=>$username,"authentication"=>$password,"role"=>"tester")));
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			$this->initialiseRequest();
 			$this->request->setEndpoint("$user/tokens");
