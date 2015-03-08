@@ -61,10 +61,10 @@
 			$payload = array(
 				"self"=>$this->getBase()."/".RequestHandler::getRequestURI(),
 				"key"=>$this->decrypt($user->getAccessKey(),$password),
-				"secret"=>$this->decrypt($user->getAccessSecret(),$password)
+				"secret"=>$this->decrypt($user->getAccessSecret(),$password),
+				"expiry"=>$user->getExpires()
 			);
 			
-			ResponseHandler::addExpiry($user->getExpires());
 			ResponseHandler::retrieved($payload,$this->getBase()."/".RequestHandler::getRequestURI(),$user->getModified(),$user->getETag());
 		}
 	}
