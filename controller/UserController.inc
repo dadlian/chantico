@@ -69,9 +69,10 @@
 				}else{
 					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess");
 				}
+				
+				$count = $countResult[0]["user"];
 			}
 			
-			$count = $countResult[0]["user"];
 			return $count;
 		}
 		

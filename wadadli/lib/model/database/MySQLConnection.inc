@@ -105,7 +105,6 @@
 			}
 			
 			if(@!$preparedStatement->execute()){
-				echo $statement;
 				fatal_error(DATABASE_EXECUTE_ERROR, $preparedStatement->error.".");
 				return;
 			}

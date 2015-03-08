@@ -6,6 +6,7 @@
 			<path>users</path>
 			<controller>UserCollection</controller>
 			<roles>
+				<role1>public</role1>
 			</roles>
 			<parameters>
 			</parameters>
