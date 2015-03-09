@@ -20,7 +20,7 @@
 		public function __construct(){
 			call_user_func_array(array('parent','__construct'),array_merge(array(""),func_get_args()));
 			
-			$this->setComponentId(decapitalise($this->getTitle()));
+			$this->setComponentId(preg_replace("/\./","",decapitalise($this->getTitle())));
 			$this->setDefaultValue(str_replace("'","&#39;",$this->getDefaultValue()));
 			$this->events = array('label'=>array(),'entry'=>array());
 			$this->classes = array('label'=>array(),'entry'=>array());
@@ -41,7 +41,7 @@
 			$renderedComponent = "";
 			
 			$validLabel = ($this->postName || $this->postName == "0");
-			$componentTitle = $validLabel?$this->postName:decapitalise(str_replace(" ","",$this->getTitle()));
+			$componentTitle = $validLabel?$this->postName:decapitalise(preg_replace("/[\.\s]/","",$this->getTitle()));
 			
 			if(($componentTitle || $validLabel)  && $this->showLabel){
 				$label = new WadadliContainer($this->getComponentId()."Label");

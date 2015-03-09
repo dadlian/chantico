@@ -49,8 +49,8 @@
 		
 		protected function assureCurrency($date,$eTag){
 			$httpDate = gmdate("D, d M Y H:i:s",strtotime($date))." GMT";
-			$this->insertToHeaders("If-Modified-Since",$httpDate);
-			$this->insertToHeaders("If-None-Match",$eTag);
+			$this->insertToHeaders("X-If-Modified-Since",$httpDate);
+			$this->insertToHeaders("X-If-None-Match",$eTag);
 		}
 		
 		protected function assureConsistency($date=null,$eTag=null){
@@ -61,8 +61,8 @@
 			}
 			
 			$httpDate = gmdate("D, d M Y H:i:s",strtotime($date))." GMT";
-			$this->insertToHeaders("If-Unmodified-Since",$httpDate);
-			$this->insertToHeaders("If-Match",$eTag);
+			$this->insertToHeaders("X-If-Unmodified-Since",$httpDate);
+			$this->insertToHeaders("X-If-Match",$eTag);
 		}
 		
 		protected function suggestURI($suggestion){
