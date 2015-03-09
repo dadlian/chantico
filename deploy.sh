@@ -8,7 +8,7 @@ if [ "$1" = "dev" ]; then
 	declare -r TARGET_DIR=/var/www/html/chantico
 elif [ "$1" = "prod" ]; then
 	cp wadadli/conf/settings.prod.xml wadadli/conf/settings.xml
-	declare -r TARGET_DIR=/var/www/html/chantico
+	declare -r TARGET_DIR=datashanty@datashanty.com:public_html/gbsv/chantico
 else
 	echo "Please specify one of [dev/prod] as deploy target"
 	exit

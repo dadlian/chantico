@@ -103,7 +103,6 @@
 			if($response->getStatusCode() == "200"){
 				$responseBody = json_decode($response->getBody(),true);
 				$role = $responseBody["role"];
-				
 				$options = array();
 				foreach($responseBody as $option => $value){
 					if(!in_array($option,array("self","tokens","active-token","role"))){

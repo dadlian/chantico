@@ -5,5 +5,8 @@ RewriteEngine On
 	Header always unset Connection
 </IfModule>
 
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule (.*) wadadli/bin/wadadli.php
+
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
