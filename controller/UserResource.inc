@@ -44,6 +44,7 @@
 			if($this->getFromContent("authentication")){
 				$user->setAuthentication(md5($this->getFromContent("authentication")));
 			}
+			
 			$user->setOptions($this->getFromContent("options"));
 			$sqlGateway->save($user);
 			

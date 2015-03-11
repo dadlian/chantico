@@ -58,7 +58,7 @@
 			}
 			
 			$options = RequestHandler::getQueryParameter("options");
-			if($options && !preg_match("/^\w+~[\w:\/\-]+$/",$options)){
+			if($options && !preg_match("/^\w+~[\w:\/\-\.]+$/",$options)){
 				$invalidQueryParameters[] = "options";
 			}
 			
