@@ -1,7 +1,13 @@
 <?php
 	abstract class UserController extends PagedResourceController{
 		public function execute(){
-			if($this->viewFromArguments("user")){
+			$sqlGateway = new SQLGateway();
+			$searcher = new Searcher();
+			
+			$authorisation = RequestHandler::getAuthorisation();
+			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($authorisation["key"]));
+			$token = $sqlGateway->findUnique("APIToken",$searcher);
+			if($token->getRole() == "user"){
 				$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 				$authorisation = RequestHandler::getAuthorisation();
 				

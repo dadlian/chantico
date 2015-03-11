@@ -17,10 +17,6 @@
 				ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
 			}
 			
-			$authentication = RequestHandler::getAuthorisation();
-			$username = $authentication["key"];
-			$password = $authentication["secret"];
-			
 			//Update Access
 			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
 			$request->setEndpoint($user->getAccessEndpoint());
@@ -38,13 +34,17 @@
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 			
+			//Get corresponding access token
+			$searcher->clearCriteria();
+			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
+			$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
+			
 			//Save user changes to Chantico
 			$user->setUsername($this->getFromContent("username"));
 			$user->setAuthentication(md5($this->getFromContent("authentication")));
 			$sqlGateway->save($user);
 			
 			//Update APIToken for User to Access its tokens
-			$apiToken = RequestHandler::getAuthenticatedToken();
 			$apiToken->setAccessKey(md5($user->getUsername()));
 			$apiToken->setAccessSecret($user->getAuthentication());
 			$apiToken->setRefreshSecret($user->getAuthentication());

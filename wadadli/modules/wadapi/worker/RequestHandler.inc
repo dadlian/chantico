@@ -150,12 +150,12 @@
 		}
 		
 		public static function checksConsistency(){
-			return self::$request->viewFromHeaders("If-Unmodified-Since") || self::$request->viewFromHeaders("If-Match");
+			return self::$request->viewFromHeaders("X-If-Unmodified-Since") || self::$request->viewFromHeaders("X-If-Match");
 		}
 		
 		public static function getConsistencyTags(){
-			$modifiedDate = date("U",strtotime(self::$request->viewFromHeaders("If-Unmodified-Since")));
-			return array("ifUnmodifiedSince"=>$modifiedDate,"ifMatch"=>self::$request->viewFromHeaders("If-Match"));
+			$modifiedDate = date("U",strtotime(self::$request->viewFromHeaders("X-If-Unmodified-Since")));
+			return array("ifUnmodifiedSince"=>$modifiedDate,"ifMatch"=>self::$request->viewFromHeaders("X-If-Match"));
 		}
 		
 		public static function getSuggestedURI(){
