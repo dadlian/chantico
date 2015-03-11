@@ -29,8 +29,7 @@
 			</parameters>
 			<requirements>
 				<req1>username</req1>
-				<req2>authentication</req2>
-				<req3>role</req3>
+				<req2>role</req2>
 			</requirements>
 		</endpoint>
 		<endpoint>

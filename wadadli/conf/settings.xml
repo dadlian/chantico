@@ -11,9 +11,9 @@
 			<name>database</name>
 			<values>
 				<hostname>localhost</hostname>
-				<database>codehut</database>
-				<username>root</username>
-				<password>c0r1nTh14n</password>
+				<database>datashan_codehut</database>
+				<username>datashan_master</username>
+				<password>c4rTh4g1n14n</password>
 				<tableprefix>chantico</tableprefix>
 				<hitsforindex>100</hitsforindex>
 			</values>
@@ -21,8 +21,8 @@
 		<settings>
 			<name>install</name>
 			<values>
-				<projectpath>/var/www/html/chantico/</projectpath>
-				<urlroot>localhost/chantico</urlroot>
+				<projectpath>/home/datashanty/public_html/gbsv/chantico/</projectpath>
+				<urlroot>datashanty.com/gbsv/chantico</urlroot>
 				<dispatcher>WadapiDispatcher</dispatcher>
 			</values>
 		</settings>
@@ -51,7 +51,7 @@
 		<settings>
 			<name>options</name>
 			<values>
-				<apiuri>http://localhost/gbsv-api</apiuri>
+				<apiuri>http://datashanty.com/gbsv/api</apiuri>
 				<key>366d21dd0b8ce4001f2e883b58c40037</key>
 				<secret>6746e23ac7ab25e8f1eb77570d49180a</secret>
 				<lifetime>3600</lifetime>

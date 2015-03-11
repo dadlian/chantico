@@ -41,7 +41,10 @@
 			
 			//Save user changes to Chantico
 			$user->setUsername($this->getFromContent("username"));
-			$user->setAuthentication(md5($this->getFromContent("authentication")));
+			if($this->getFromContent("authentication")){
+				$user->setAuthentication(md5($this->getFromContent("authentication")));
+			}
+			$user->setOptions($this->getFromContent("options"));
 			$sqlGateway->save($user);
 			
 			//Update APIToken for User to Access its tokens

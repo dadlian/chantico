@@ -21,6 +21,9 @@
 		/** @Integer */
 		protected $expires;
 		
+		/** @Collection(type=@String) */
+		protected $options;
+		
 		protected function getURI(){
 			return "http://".SettingsManager::getSetting("install","urlroot")."/users/{$this->getId()}";
 		}

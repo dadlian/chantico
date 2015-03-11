@@ -54,6 +54,7 @@
 			$user->setRefreshSecret($this->encrypt($refreshSecret,$this->getFromContent("authentication")));
 			$user->setAccessEndpoint($accessEndpoint,$this->getFromContent("authentication"));
 			$user->setExpires(time()+$lifetime);
+			$user->setOptions($this->getFromContent("options"));
 			$sqlGateway->save($user);
 			
 			//Create APIToken for User to Access its tokens
