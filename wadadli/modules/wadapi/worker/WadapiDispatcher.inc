@@ -26,15 +26,19 @@
 			$searcher->clearCriteria();
 			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($accessKey));
 			$token = $sqlGateway->findUnique("APIToken",$searcher);
+			$method = strtolower(RequestHandler::getMethod());
 			
 			$isValidKey = $token;
 			$isFresh = $isValidKey && (!$token->getExpires() || $token->getExpires() > time());
 			$isValidSecret = $isValidKey && $isFresh && $token->getAccessSecret() == md5($accessSecret); 
 			$isValidRefresh = $isValidKey && $token->getRefreshSecret() == md5($accessSecret);
 			$isRefreshRequest = preg_match("/^access\/[0-9]+\/tokens$/",RequestHandler::getRequestURI());
-			$isValidRole = $isValidKey && ($token->getRole() == "root" || in_array($token->getRole(),RequestHandler::getEndpoint()->getRoles()));
+			$isValidRole = $isValidKey && ($token->getRole() == "root" || RequestHandler::getEndpoint()->viewFromRoles($token->getRole()));
+			$activeRole = RequestHandler::getEndpoint()->viewFromRoles($token->getRole());
+			$hasPermission = $isValidRole && ((in_array($method,array("get")) && in_array("read",$activeRole->getPermissions())) ||
+								in_array($method,array("put","post","delete")) && in_array("write",$activeRole->getPermissions()));
 			
-			if(($isValidRole && $isValidSecret) || ($isRefreshRequest && $isValidRefresh)){
+			if(($isValidRole && $hasPermission && $isValidSecret) || ($isRefreshRequest && $isValidRefresh)){
 				$controllerClass = RequestHandler::getEndpoint()->getController();
 				$controller = new $controllerClass(RequestHandler::getURIArguments());
 				$controller->execute();

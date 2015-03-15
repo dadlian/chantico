@@ -6,7 +6,12 @@
 			<path>users</path>
 			<controller>UserCollection</controller>
 			<roles>
-				<role1>administrator</role1>
+				<administrator>
+					<permissions>
+						<permission1>write</permission1>
+						<permission2>read</permission2>
+					</permissions>
+				</administrator>
 			</roles>
 			<parameters>
 			</parameters>
@@ -21,8 +26,17 @@
 			<path>users/@</path>
 			<controller>UserResource</controller>
 			<roles>
-				<role1>administrator</role1>
-				<role2>user</role2>
+				<administrator>
+					<permissions>
+						<permission1>write</permission1>
+						<permission2>read</permission2>
+					</permissions>
+				</administrator>
+				<user>
+					<permissions>
+						<permission1>read</permission1>
+					</permissions>
+				</user>
 			</roles>
 			<parameters>
 				<param1>user</param1>
@@ -37,7 +51,11 @@
 			<path>users/@/tokens</path>
 			<controller>UserTokensResource</controller>
 			<roles>
-				<role1>user</role1>
+				<user>
+					<permissions>
+						<permission1>read</permission1>
+					</permissions>
+				</user>
 			</roles>
 			<parameters>
 				<param1>user</param1>

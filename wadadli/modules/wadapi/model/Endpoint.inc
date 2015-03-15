@@ -21,7 +21,7 @@
 		/*
 		 * A list of user types that have permission to execute this endpoint
 		 */
-		/** @Collection(type=@String) */
+		/** @Collection(type=@Object(class='WadapiRole')) */
 		protected $roles;
 		
 		/*
@@ -35,6 +35,14 @@
 		 */
 		/** @Collection(type=@String) */
 		protected $requirements;
+		
+		public function getAllowedRoles(){
+			$allowedRoles = array();
+			foreach($this->getRoles() as $role){
+				$allowedRoles[] = $role->getTitle();
+			}
+			return $allowedRoles;
+		}
 		
 		public function __toString(){
 			return $this->getPath();

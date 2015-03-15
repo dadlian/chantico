@@ -20,10 +20,10 @@
 			$accessSecret = md5((time()/rand()) * rand());
 			$refreshSecret = md5((time()/rand()) * rand());
 		
-			$this->setExpires($lifetime?$this->getCreated()+$lifetime:$lifetime);
 			$this->setAccessKey(md5($accessKey));
 			$this->setAccessSecret(md5($accessSecret));
 			$this->setRefreshSecret(md5($refreshSecret));
+			$this->setExpires($lifetime?$this->getModified()+$lifetime:$lifetime);
 			
 			return array("key"=>$accessKey,"secret"=>$accessSecret,"refresh"=>$refreshSecret);
 		}

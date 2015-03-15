@@ -60,8 +60,20 @@
 		
 		protected function delete(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
-			CryptKeeper::bury($user);
-			ResponseHandler::deleted("User: /".RequestHandler::getRequestURI().", has been removed.");
+			
+			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+			$request->setEndpoint($user->getAccessEndpoint());
+			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+			$request->setContentType("application/json");
+			$request->assureConsistency();
+			$response = $request->delete();
+			
+			if($response->getStatusCode() == 200){
+				CryptKeeper::bury($user);
+				ResponseHandler::deleted("User: /".RequestHandler::getRequestURI().", has been removed.");
+			}else{
+				ResponseHandler::error("User: /".RequestHandler::getRequestURI().", cannot be removed.");
+			}
 		}
 	
 		protected function isConsistent($modifiedDate,$eTag){

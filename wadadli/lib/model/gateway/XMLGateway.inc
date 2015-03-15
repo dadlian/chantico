@@ -253,7 +253,7 @@
 					}
 				}else if($property->getAnnotation()->isCollection()){
 					$listType = $property->getAnnotation()->getContainedType();
-					$constructorArray[] = $this->loadList($propertyValue, $listType->getType());
+					$constructorArray[] = $this->loadList($propertyValue, $listType);
 				}else if($property->getAnnotation()->isInteger()){
 					$constructorArray[] = (int)$propertyValue;
 				}else if($property->getAnnotation()->isFloat() || $property->getAnnotation()->isMonetary()){
@@ -279,14 +279,14 @@
 			}
 			
 			foreach($node->children() as $listElement){
-				if($listType == "Collection"){
+				if($listType->isCollection()){
 					$listElementChildren = $listElement->children();
 					$nextElement = $this->loadList($listElementChildren[0]);
-				}else if(class_exists($listType)){
-					$class = Mirror::reflectClass($listType);
+				}else if($listType->isObject() && class_exists($listType->getObjectClass())){
+					$class = Mirror::reflectClass($listType->getObjectClass());
 					if($class->descendsFrom('PersistentClass')){
 						$listElementChildren = $listElement->children();
-						$nextElement = $this->loadObject($listElementChildren[0]);
+						$nextElement = $this->loadObject($listType->getObjectClass(),$listElement);
 					}else{
 						$nextElement = (string)$listElement;
 					}
