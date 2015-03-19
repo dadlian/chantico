@@ -71,7 +71,7 @@
 				$username = RequestHandler::getQueryParameter("username");
 				$options = RequestHandler::getQueryParameter("options");
 				if($username){
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE username LIKE '%$username%'");
+					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE username LIKE '$username'");
 				}else if($options){
 					$parameters = preg_split("/~/",$options);
 					$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
@@ -95,7 +95,7 @@
 			$username = RequestHandler::getQueryParameter("username");
 			$options = RequestHandler::getQueryParameter("options");
 			if($username){
-				$searcher->addCriterion("username",Criterion::LIKE,"%$username%");
+				$searcher->addCriterion("username",Criterion::LIKE,"$username");
 			}else if($options){
 				$parameters = preg_split("/~/",$options);
 				$results = DatabaseAdministrator::execute("SELECT A.id FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
