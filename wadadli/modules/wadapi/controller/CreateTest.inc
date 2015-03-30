@@ -8,7 +8,7 @@
 			$testName = (array_key_exists("name",$arguments)?$arguments["name"]:"Test Run");
 			$nameParts = explode(" ",$testName);
 			$slug = strtolower($nameParts[sizeof($nameParts)-1]);
-			$organisation = new Organisation($slug,$arguments["name"]);
+			$organisation = new Organisation($slug,$arguments["name"],true);
 			$organisation->reconcileSlug();
 			
 			//Create Root Access Token

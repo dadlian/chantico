@@ -1,6 +1,6 @@
 <?php
 	abstract class Controller extends WadadliClass{
-		const DASH_ESCAPE = "84sH1";
+		const DASH_ESCAPE = "84sh1";
 	
 		/** @Collection(type=@String) */
 		protected $arguments;

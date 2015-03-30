@@ -210,7 +210,7 @@
 					
 					//Check that contents of the user are valid
 					$responseBody = $responseBody['entries'][0];
-					
+						
 					$this->assertTrue(array_key_exists("username",$responseBody),"A user resource in a paginated user collection by username does not include a username.");
 					if(array_key_exists("username",$responseBody)){
 						$this->assertEqual($username[2],$responseBody["username"],"A user resource in a paginated user collection by username includes the wrong username: {$responseBody['username']}");
@@ -455,7 +455,7 @@
 			//Test for Valid Status Line
 			$this->assertEqual(200,$response->getStatusCode(),"Successful user modification returns the wrong status code: {$response->getStatusCode()}");
 			$this->assertEqual("OK",$response->getReason(),"Successful user modification returns the wrong reason: {$response->getReason()}");
-					
+			
 			//Test for Modified User Content
 			$this->assertTrue($this->validJSON($response->getBody()),"Successful user modification does not return valid JSON in the response body.");
 			if($this->validJSON($response->getBody())){
@@ -579,7 +579,7 @@
 			$response = $this->request->put();
 			$this->assertEqual(400,$response->getStatusCode(),"/users/{user_id} endpoint returns incorrect status code for missing required arguments: {$response->getStatusCode()}");
 			$this->assertEqual("Bad Request",$response->getReason(),"/users/{user_id} endpoint returns incorrect reason for missing required arguments: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The following arguments are required, but have not been supplied: username, authentication, role.","Failing to supply required arguments to the /users/{user_id} endpoint returns an invalid message");
+			$this->validateErrorMessage($response,"The following arguments are required, but have not been supplied: username, role.","Failing to supply required arguments to the /users/{user_id} endpoint returns an invalid message");
 			
 			
 			/**** Test Invalid Arguments ****/
@@ -645,6 +645,8 @@
 			/**** Test Incorrectly Authorised Request ****/
 			$this->initialiseRequest();
 			$this->request->setEndpoint($user);
+			$this->request->setBody(json_encode(array("username"=>$username,"role"=>"tester")));
+			$this->request->authorise("Fake User","nopass");
 			$response = $this->request->put();
 			$this->assertEqual(403,$response->getStatusCode(),"Accessing /users/{user_id} endpoint with unauthorised credentials returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Forbidden",$response->getReason(),"Accessing /users/{user_id} endpoint with unauthorised credentials returns incorrect reason: {$response->getReason()}");
@@ -768,13 +770,9 @@
 			$this->assertEqual(strlen($response->getBody()),$response->viewFromHeaders("Content-Length"),"Successful user tokens retrieval responds with the incorrect Content-Length: ".$response->viewFromHeaders("Content-Length"));
 			$this->assertPattern($locationPattern,$response->viewFromHeaders("Content-Location"),"Successful user tokens retrieval responds with the incorrect Content-Location: ".$response->viewFromHeaders("Content-Location"));
 			
-			//Test for resource specific headers
-			$expiresPattern = "/".gmdate("D, d M Y",time()+10)." [0-2][0-9]:[0-5][0-9]:[0-5][0-9] GMT/";
-			$this->assertPattern($expiresPattern,$response->viewFromHeaders("Expires"),"Successful Token Retrieval responds with the incorrect Expiry Date: ".$response->viewFromHeaders("Expires"));
-			
 			//Ensure there are no unexpected Headers
-			$this->assertEqual(10,sizeof($response->getHeaders()),"Successful user tokens retrieval responds with superfluous headers (10 expected, ".sizeof($response->getHeaders())." given)");
-						
+			$this->assertEqual(9,sizeof($response->getHeaders()),"Successful user tokens retrieval responds with superfluous headers (10 expected, ".sizeof($response->getHeaders())." given)");
+			
 			//Test Retrieved User Content
 			$this->assertTrue($this->validJSON($response->getBody()),"Successful user tokens retrieval does not return valid JSON in the response body.");
 			if($this->validJSON($response->getBody())){
@@ -806,7 +804,6 @@
 			$user = str_replace("http://{$this->apiRoot}","",$this->request->post()->viewFromHeaders("Location"));
 			$this->initialiseRequest();
 			$this->request->setEndpoint("$user/tokens");
-			$this->request->authorise($username,$password);
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			
@@ -853,6 +850,7 @@
 			/**** Test Incorrectly Authorised Request ****/
 			$this->initialiseRequest();
 			$this->request->setEndpoint("$user/tokens");
+			$this->request->authorise("Fake User","badpass");
 			$response = $this->request->put();
 			$this->assertEqual(403,$response->getStatusCode(),"Accessing /users/{user_id}/tokens endpoint with unauthorised credentials returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Forbidden",$response->getReason(),"Accessing /users/{user_id}/tokens endpoint with unauthorised credentials returns incorrect reason: {$response->getReason()}");

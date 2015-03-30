@@ -64,7 +64,6 @@
 				"secret"=>$this->decrypt($user->getAccessSecret(),$password),
 				"expiry"=>$user->getExpires()
 			);
-			
 			ResponseHandler::retrieved($payload,$this->getBase()."/".RequestHandler::getRequestURI(),$user->getModified(),$user->getETag());
 		}
 	}

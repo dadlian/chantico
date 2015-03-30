@@ -51,9 +51,9 @@
 		protected function getInvalidQueryParameters(){
 			$invalidQueryParameters = array();
 			
-			$username = RequestHandler::getQueryParameter("username");
-			if(!is_string($username)){
-				$invalidQueryParameters[] = "username";
+			$usernames = RequestHandler::getQueryParameter("usernames");
+			if(!is_string($usernames)){
+				$invalidQueryParameters[] = "usernames";
 				break;
 			}
 			
@@ -68,10 +68,14 @@
 		protected function getRecordCount(){
 			$count = 0;
 			if(DatabaseAdministrator::tableExists("ManagedAccess")){
-				$username = RequestHandler::getQueryParameter("username");
+				$usernames = RequestHandler::getQueryParameter("usernames");
 				$options = RequestHandler::getQueryParameter("options");
-				if($username){
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE username LIKE '$username'");
+				if($usernames){
+					$patterns = array();
+					foreach(explode(",",$usernames) as $username){
+						$patterns[] = "username LIKE '$username'";
+					}
+					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE ".implode(" OR ",$patterns));
 				}else if($options){
 					$parameters = preg_split("/~/",$options);
 					$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
@@ -92,14 +96,25 @@
 				
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
-			$username = RequestHandler::getQueryParameter("username");
+			$usernames = RequestHandler::getQueryParameter("usernames");
 			$options = RequestHandler::getQueryParameter("options");
-			if($username){
-				$searcher->addCriterion("username",Criterion::LIKE,"$username");
+			if($usernames){
+				$patterns = array();
+				foreach(explode(",",$usernames) as $username){
+					$patterns[] = "username LIKE '$username'";
+				}
+				
+				$results = DatabaseAdministrator::execute("SELECT id FROM ManagedAccess WHERE ".implode(" OR ",$patterns));
+				$users = array();
+				foreach($results as $user){
+					$users[] = $user["id"];
+				}
+				
+				$searcher->addCriterion("id",Criterion::EQUAL,$users);
 			}else if($options){
 				$parameters = preg_split("/~/",$options);
 				$results = DatabaseAdministrator::execute("SELECT A.id FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
-								"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}'");
+										"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}'");
 				$users = array();
 				foreach($results as $user){
 					$users[] = $user["id"];

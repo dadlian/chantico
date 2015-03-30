@@ -45,7 +45,7 @@
 				$user->setAuthentication(md5($this->getFromContent("authentication")));
 			}
 			
-			$user->setOptions($this->getFromContent("options"));
+			$user->setOptions($this->getFromContent("options",array()));
 			$sqlGateway->save($user);
 			
 			//Update APIToken for User to Access its tokens

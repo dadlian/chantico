@@ -34,9 +34,11 @@
 			$isValidRefresh = $isValidKey && $token->getRefreshSecret() == md5($accessSecret);
 			$isRefreshRequest = preg_match("/^access\/[0-9]+\/tokens$/",RequestHandler::getRequestURI());
 			$isValidRole = $isValidKey && ($token->getRole() == "root" || RequestHandler::getEndpoint()->viewFromRoles($token->getRole()));
-			$activeRole = RequestHandler::getEndpoint()->viewFromRoles($token->getRole());
-			$hasPermission = $isValidRole && ((in_array($method,array("get")) && in_array("read",$activeRole->getPermissions())) ||
-								in_array($method,array("put","post","delete")) && in_array("write",$activeRole->getPermissions()));
+			$isRoot = $isValidRole && $token->getRole() == "root";
+			$activeRole = $isValidRole?RequestHandler::getEndpoint()->viewFromRoles($token->getRole()):null;
+			
+			$hasPermission = $isRoot || ($isValidRole && ((in_array($method,array("get")) && in_array("read",$activeRole->getPermissions())) ||
+							in_array($method,array("put","post","delete")) && in_array("write",$activeRole->getPermissions())));
 			
 			if(($isValidRole && $hasPermission && $isValidSecret) || ($isRefreshRequest && $isValidRefresh)){
 				$controllerClass = RequestHandler::getEndpoint()->getController();

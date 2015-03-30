@@ -23,7 +23,7 @@
 			$this->setAccessKey(md5($accessKey));
 			$this->setAccessSecret(md5($accessSecret));
 			$this->setRefreshSecret(md5($refreshSecret));
-			$this->setExpires($lifetime?$this->getModified()+$lifetime:$lifetime);
+			$this->expires = $lifetime?$this->getModified()+$lifetime:$lifetime;
 			
 			return array("key"=>$accessKey,"secret"=>$accessSecret,"refresh"=>$refreshSecret);
 		}

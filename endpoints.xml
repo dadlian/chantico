@@ -34,7 +34,8 @@
 				</administrator>
 				<user>
 					<permissions>
-						<permission1>read</permission1>
+						<permission1>write</permission1>
+						<permission2>read</permission2>
 					</permissions>
 				</user>
 			</roles>
