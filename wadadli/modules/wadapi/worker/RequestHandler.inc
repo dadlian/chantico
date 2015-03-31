@@ -103,6 +103,14 @@
 			return self::$request->getMethod();
 		}
 		
+		public static function getHeader($header){
+			if(!self::$request){
+				self::initialise();
+			}
+			
+			return self::$request->viewFromHeaders($header);
+		}
+		
 		public static function getArgument($key){
 			if(!self::$request){
 				self::initialise();

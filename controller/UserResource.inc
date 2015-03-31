@@ -8,6 +8,12 @@
 		
 		protected function put(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			
+			//Deny password changes without old password
+			$userAuthentication = base64_decode(RequestHandler::getHeader("X-Authentication"));
+			if($this->getFromContent("authentication") && md5($userAuthentication) != $user->getAuthentication()){
+				ResponseHandler::precondition("The provided user credentials do not match those stored.");
+			}
 		
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
@@ -43,6 +49,9 @@
 			$user->setUsername($this->getFromContent("username"));
 			if($this->getFromContent("authentication")){
 				$user->setAuthentication(md5($this->getFromContent("authentication")));
+				$user->setAccessKey($this->encrypt($this->decrypt($user->getAccessKey(),$userAuthentication),$this->getFromContent("authentication")));
+				$user->setAccessSecret($this->encrypt($this->decrypt($user->getAccessSecret(),$userAuthentication),$this->getFromContent("authentication")));
+				$user->setRefreshSecret($this->encrypt($this->decrypt($user->getRefreshSecret(),$userAuthentication),$this->getFromContent("authentication")));
 			}
 			
 			$user->setOptions($this->getFromContent("options",array()));
