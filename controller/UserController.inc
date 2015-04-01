@@ -54,12 +54,16 @@
 			$usernames = RequestHandler::getQueryParameter("usernames");
 			if(!is_string($usernames)){
 				$invalidQueryParameters[] = "usernames";
-				break;
 			}
 			
 			$options = RequestHandler::getQueryParameter("options");
 			if($options && !preg_match("/^\w+~[\w:\/\-\.]+$/",$options)){
 				$invalidQueryParameters[] = "options";
+			}
+			
+			$access = RequestHandler::getQueryParameter("access");
+			if(!is_string($access)){
+				$invalidQueryParameters[] = "access";
 			}
 			
 			return $invalidQueryParameters;
@@ -70,6 +74,7 @@
 			if(DatabaseAdministrator::tableExists("ManagedAccess")){
 				$usernames = RequestHandler::getQueryParameter("usernames");
 				$options = RequestHandler::getQueryParameter("options");
+				$access = RequestHandler::getQueryParameter("access");
 				if($usernames){
 					$patterns = array();
 					foreach(explode(",",$usernames) as $username){
@@ -81,6 +86,8 @@
 					$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
 							"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}'";
 					$countResult = DatabaseAdministrator::execute($query);
+				}else if($access){
+					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE accessEndpoint = '$access'");
 				}else{
 					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess");
 				}
@@ -98,6 +105,7 @@
 			$searcher = new Searcher();
 			$usernames = RequestHandler::getQueryParameter("usernames");
 			$options = RequestHandler::getQueryParameter("options");
+			$access = RequestHandler::getQueryParameter("access");
 			if($usernames){
 				$patterns = array();
 				foreach(explode(",",$usernames) as $username){
@@ -121,6 +129,8 @@
 				}
 				
 				$searcher->addCriterion("id",Criterion::EQUAL,$users);
+			}else if($access){
+				$searcher->addCriterion("accessEndpoint",Criterion::EQUAL,$access);
 			}
 			
 			foreach($sqlGateway->find("ManagedAccess",$searcher,new Sorter(),$count,$start) as $user){
