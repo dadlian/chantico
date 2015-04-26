@@ -62,7 +62,8 @@
 				"self"=>$this->getBase()."/".RequestHandler::getRequestURI(),
 				"key"=>$this->decrypt($user->getAccessKey(),$password),
 				"secret"=>$this->decrypt($user->getAccessSecret(),$password),
-				"expiry"=>$user->getExpires()
+				"expiry"=>$user->getExpires(),
+				"renew"=>$user->getURI()."/renewals?warrant=".Magistrate::issueWarrant("renew")
 			);
 			ResponseHandler::retrieved($payload,$this->getBase()."/".RequestHandler::getRequestURI(),$user->getModified(),$user->getETag());
 		}
