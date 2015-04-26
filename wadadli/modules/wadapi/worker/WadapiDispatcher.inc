@@ -20,12 +20,9 @@
 			
 			//Ensure request authentication is valid
 			$authorisation = RequestHandler::getAuthorisation();
-			$accessKey = $authorisation["key"];
 			$accessSecret = $authorisation["secret"];
 			
-			$searcher->clearCriteria();
-			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($accessKey));
-			$token = $sqlGateway->findUnique("APIToken",$searcher);
+			$token = RequestHandler::getAuthenticatedToken();
 			$method = strtolower(RequestHandler::getMethod());
 			
 			$isValidKey = $token;
@@ -41,6 +38,10 @@
 							in_array($method,array("put","post","delete")) && in_array("write",$activeRole->getPermissions())));
 			
 			if(($isValidRole && $hasPermission && $isValidSecret) || ($isRefreshRequest && $isValidRefresh)){
+				if(RequestHandler::getAuthenticatedToken()->getRole() == "test" && !RequestHandler::isTest()){
+					ResponseHandler::forbidden("The provided tokens do not have permission to perform this action.");
+				}
+			
 				$controllerClass = RequestHandler::getEndpoint()->getController();
 				$controller = new $controllerClass(RequestHandler::getURIArguments());
 				$controller->execute();

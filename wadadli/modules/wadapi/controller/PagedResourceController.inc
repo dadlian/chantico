@@ -37,7 +37,7 @@
 			$additionalQueryParameters = "";
 			foreach(RequestHandler::getQueryParameters() as $parameter => $argument){
 				if(!in_array($parameter,array("page","records"))){
-					$additionalQueryParameters .= "&$parameter=$argument";
+					$additionalQueryParameters .= "&$parameter=".preg_replace("/\s/","%20",$argument);
 				}
 			}
 			

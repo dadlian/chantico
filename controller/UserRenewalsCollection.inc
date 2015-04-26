@@ -1,0 +1,140 @@
+<?php
+	class UserRenewalsCollection extends UserController{
+		protected function isInvalid(){
+			return array();
+		}
+	
+		protected function isConsistent($modifiedDate,$eTag){
+			return true;
+		}
+		
+		protected function getInvalidQueryParameters(){
+			$invalidQueryParameters = array();
+			
+			$warrant = RequestHandler::getQueryParameter("warrant");
+			if($warrant){
+				$sqlGateway = new SQLGateway();
+				$searcher = new Searcher();
+				$searcher->addCriterion("token",Criterion::EQUAL,md5($warrant.$_SERVER['REMOTE_ADDR']));
+				
+				if(!$sqlGateway->findUnique("RenewalStub",$searcher) || !Magistrate::executeWarrant($warrant)){
+					$invalidQueryParameters[] = "warrant";
+				}
+			}
+			
+			return $invalidQueryParameters;
+		}
+		
+		protected function getRecordCount(){
+			$renewals = DatabaseAdministrator::execute("SELECT COUNT(id) as renewals FROM Renewal");
+			return $renewals[0]["renewals"];
+		}
+		
+		protected function buildPageEntries($start,$count){
+			$sqlGateway = new SQLGateway();
+			$searcher = new Searcher();
+			$sorter = new Sorter();
+			$sorter->addCriterion("created",Criterion::DESCENDING);
+			
+			$payload = array();
+			foreach($sqlGateway->find("Renewal",$searcher,$sorter,$count,$start) as $renewal){
+				$payload[] = $this->assemblePayload($renewal);
+			}
+			
+			return $payload;
+		}
+		
+		protected function assemblePayload($renewal){
+			$payload = array(
+				"renewed-at"=>date("c",$renewal->getRenewedAt())
+			);
+			
+			return $payload;
+		}
+		
+		protected function post(){
+			$invalidArguments = $this->getInvalidQueryParameters();
+			if($invalidArguments){
+				ResponseHandler::bad("The following query parameters have invalid values: ".implode(", ",$invalidArguments).".");
+			}
+			
+			if(!RequestHandler::getQueryParameter("warrant")){
+				ResponseHandler::bad("The following query parameters are required, but missing: warrant.");
+			}
+			
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			
+			//Check that a renewal request is in time
+			if($user->getExpires() < time()){
+				ResponseHandler::forbidden("The user tokens have expired and can no longer be renewed.");
+			}
+			
+			//Retrieve user access resource
+			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+			$request->setEndpoint($user->getAccessEndpoint());
+			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+			$request->setContentType("application/json");
+			$response = $request->get();
+			
+			if($response->getStatusCode() != 200){
+				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
+			}else{
+				$access = json_decode($response->getBody(),true);
+			}
+			
+			//Retrieve Renewal Stub
+			$token = RequestHandler::getQueryParameter("warrant").$_SERVER['REMOTE_ADDR'];
+			$sqlGateway = new SQLGateway();
+			$searcher = new Searcher();
+			$searcher->addCriterion("token",Criterion::EQUAL,md5($token));
+			$stub = $sqlGateway->findUnique("RenewalStub",$searcher);
+			
+			//Refresh the user token
+			$accessEndpoint = parse_url($access["tokens"],PHP_URL_PATH);
+			$request->setEndpoint($accessEndpoint);
+			$request->authorise($this->decrypt($stub->getAccessKey(),$token),$this->decrypt($stub->getRefreshSecret(),$token));
+			$request->setBody(json_encode(array("lifetime"=>SettingsManager::getSetting("options","lifetime"))));
+			$response = $request->post();
+			if($response->getStatusCode() == 201){
+				$body = json_decode($response->getBody(),true);
+				$accessKey = $body["key"];
+				$accessSecret = $body["secret"];
+				$refreshSecret = $body["refresh"];
+				$lifetime = $body["lifetime"];
+				
+				//Save User to Chantico
+				$password = $this->decrypt($stub->getUserPassword(),$token);
+				$user->setAccessKey($this->encrypt($accessKey,$password));
+				$user->setAccessSecret($this->encrypt($accessSecret,$password));
+				$user->setRefreshSecret($this->encrypt($refreshSecret,$password));
+				$user->setExpires(time()+$lifetime);
+				
+				$sqlGateway->save($user);
+			}else{
+				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
+			}
+			
+			//Register this renewal event
+			$sqlGateway->save(new Renewal($user->getModified()));
+			
+			//Update the renewal stub
+			$warrant = Magistrate::issueWarrant("renew");
+			$stubToken = $warrant.$_SERVER['REMOTE_ADDR'];
+			$stub->setToken(md5($stubToken));
+			$stub->setAccessKey($this->encrypt($accessKey,$stubToken));
+			$stub->setRefreshSecret($this->encrypt($refreshSecret,$stubToken));
+			$stub->setUserPassword($this->encrypt($password,$stubToken));
+			$sqlGateway->save($stub);
+			
+			$uri = "http://".SettingsManager::getSetting("install","urlroot")."/".RequestHandler::getRequestURI();
+			$payload = array(
+				"key"=>$accessKey,
+				"secret"=>$refreshSecret,
+				"expiry"=>$user->getExpires(),
+				"renew"=>$user->getURI()."/renewals?warrant=$warrant"
+			);
+			
+			ResponseHandler::created($payload,$uri);
+		}
+	}
+?>

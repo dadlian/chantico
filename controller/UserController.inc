@@ -4,10 +4,7 @@
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
 			
-			$authorisation = RequestHandler::getAuthorisation();
-			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($authorisation["key"]));
-			$token = $sqlGateway->findUnique("APIToken",$searcher);
-			if($token->getRole() == "user"){
+			if(RequestHandler::getAuthenticatedToken()->getRole() == "user"){
 				$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 				$authorisation = RequestHandler::getAuthorisation();
 				

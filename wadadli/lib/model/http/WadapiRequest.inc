@@ -106,7 +106,7 @@
 			if($this->getArguments()){
 				$queryString = array();
 				foreach($this->getArguments() as $key=>$value){
-					$queryString[] = "$key=$value";
+					$queryString[] = "$key=".urlencode($value);
 				}
 				$queryString = "?".implode("&",$queryString);
 			}

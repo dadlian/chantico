@@ -334,7 +334,7 @@
 				}
 			}
 			
-			$query = "SELECT * FROM $fromTable ".($where?preg_replace("/\sid\s/"," a.id ","WHERE ".implode(" AND ",$where)):"")." $order $limit";
+			$query = "SELECT * FROM $fromTable ".($where?preg_replace("/\s(id|created|modified)\s/"," a.$1 ","WHERE ".implode(" AND ",$where)):"")." $order $limit";
 			//Replace placeholders with hard coded nulls, if necessary
 			if(in_array(null,$whereArguments)){
 				$positions = array();

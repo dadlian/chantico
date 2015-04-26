@@ -6,6 +6,7 @@
 		private static $uriArguments;
 		private static $queryParameters;
 		private static $acceptables;
+		private static $authenticatedToken;
 		
 		public static function getHost(){
 			if(!self::$request){
@@ -78,7 +79,7 @@
 				foreach($queryParts as $queryPart){
 					$keyValue = preg_split("/=/",$queryPart);
 					if(sizeof($keyValue) > 1){
-						$queryParameters[$keyValue[0]] = $keyValue[1];
+						$queryParameters[$keyValue[0]] = urldecode($keyValue[1]);
 					}
 				}
 				self::$queryParameters = $queryParameters;
@@ -151,10 +152,14 @@
 				return new APIToken();
 			}
 			
-			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
-			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($authorisation["key"]));
-			return $sqlGateway->findUnique("APIToken",$searcher);
+			if(!self::$authenticatedToken){
+				$sqlGateway = new SQLGateway();
+				$searcher = new Searcher();
+				$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($authorisation["key"]));
+				self::$authenticatedToken = $sqlGateway->findUnique("APIToken",$searcher);
+			}
+			
+			return self::$authenticatedToken;
 		}
 		
 		public static function checksConsistency(){

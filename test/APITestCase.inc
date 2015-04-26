@@ -38,6 +38,9 @@
 		protected function flushDB(){
 			$databaseConnection = new MySQLi('localhost', 'root', 'c0r1nTh14n', 'sandbox');
 			$databaseConnection->query("DELETE FROM chantico_Resource WHERE id NOT IN (SELECT MIN(id) FROM (SELECT * FROM chantico_Resource) as A)");
+			$databaseConnection->query("DELETE FROM chantico_Warrant");
+			$databaseConnection->query("DELETE FROM chantico_Renewal");
+			$databaseConnection->query("DELETE FROM chantico_RenewalStub");
 			$databaseConnection->commit();
 			$this->key = array();
 		}

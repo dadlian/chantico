@@ -64,5 +64,23 @@
 			<requirements>
 			</requirements>
 		</endpoint>
+		<endpoint>
+			<name>User Renewals Collection</name>
+			<path>users/@/renewals</path>
+			<controller>UserRenewalsCollection</controller>
+			<roles>
+				<administrator>
+					<permissions>
+						<permission1>read</permission1>
+						<permission1>write</permission1>
+					</permissions>
+				</administrator>
+			</roles>
+			<parameters>
+				<param1>user</param1>
+			</parameters>
+			<requirements>
+			</requirements>
+		</endpoint>
 	</endpointlist>
 </mapping>

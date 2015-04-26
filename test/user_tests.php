@@ -965,7 +965,7 @@
 				}
 			}
 		}
-		
+
 		
 		function testSuccessfulUserTokensRenewal(){
 			//Create a new user resource
@@ -988,23 +988,22 @@
 			//Test token renewal
 			$this->initialiseRequest();
 			$this->request->setEndpoint(str_replace("http://{$this->apiRoot}","",$responseBody["renew"]));
-			$this->request->authorise($username,$password);
 			$response = $this->request->post();
 			
 			//Test for Valid Status Line
-			$this->assertEqual(200,$response->getStatusCode(),"Successful user tokens renewal returns the wrong status code: {$response->getStatusCode()}");
-			$this->assertEqual("OK",$response->getReason(),"Successful user tokens renewal returns the wrong reason: {$response->getReason()}");
+			$this->assertEqual(201,$response->getStatusCode(),"Successful user tokens renewal returns the wrong status code: {$response->getStatusCode()}");
+			$this->assertEqual("Created",$response->getReason(),"Successful user tokens renewal returns the wrong reason: {$response->getReason()}");
 			
 			//Test for Mandatory Headers
 			$datePattern = "/".gmdate("D, d M Y")." [0-2][0-9]:[0-5][0-9]:[0-5][0-9] GMT/";
-			$locationPattern = "/http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot)."$user/renewals?warrant=")."[a-z0-9]{32}/";
+			$locationPattern = "/http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot)."$user/renewals")."/";
 			
 			$this->assertPattern($datePattern,$response->viewFromHeaders("Date"),"Successful user tokens renewal responds with a malformed or incorrect Date Header: {$response->viewFromHeaders('Date')}");
 			$this->assertEqual(strlen($response->getBody()),$response->viewFromHeaders("Content-Length"),"Successful user tokens renewal responds with the incorrect Content-Length: ".$response->viewFromHeaders("Content-Length"));
 			$this->assertPattern($locationPattern,$response->viewFromHeaders("Content-Location"),"Successful user tokens renewal responds with the incorrect Content-Location: ".$response->viewFromHeaders("Content-Location"));
 			
 			//Ensure there are no unexpected Headers
-			$this->assertEqual(9,sizeof($response->getHeaders()),"Successful user tokens renewal responds with superfluous headers (9 expected, ".sizeof($response->getHeaders())." given)");
+			$this->assertEqual(8,sizeof($response->getHeaders()),"Successful user tokens renewal responds with superfluous headers (8 expected, ".sizeof($response->getHeaders())." given)");
 			
 			//Test Retrieved User Content
 			$this->assertTrue($this->validJSON($response->getBody()),"Successful user tokens renewal does not return valid JSON in the response body.");
@@ -1031,8 +1030,8 @@
 				
 				$this->assertTrue(array_key_exists("renew",$responseBody),"A successfully created renewal resource does not include a renewal link.");
 				if(array_key_exists("renew",$responseBody)){
-					$renewalPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."/renewals?warrant=")."[a-f0-9]{32}");
-					$this->assertPattern("/^$renewalPattern$/",$responseBody["renew"],"A successfully created renewal resource has an invalid renewal link: {$responseBody['renew']}");
+					$renewalPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."$user/renewals?warrant=")."[a-f0-9]{32}");
+					$this->assertPattern("/$renewalPattern/",$responseBody["renew"],"A successfully created renewal resource has an invalid renewal link: {$responseBody['renew']}");
 					$this->assertNotEqual($responseBody["renew"], $originalRenew,"A successfully created renewal resource does not issue a new link for future renewals: {$responseBody['renew']}");
 				}
 			}
@@ -1043,23 +1042,21 @@
 			//Renew token multiple times
 			$this->initialiseRequest();
 			$this->request->setEndpoint(str_replace("http://{$this->apiRoot}","",$responseBody["renew"]));
-			$this->request->authorise($username,$password);
 			$response = $this->request->post();
-			$renewedAt[] = $response->viewFromHeaders("Date");
-			$responseBody = json_encode($response->getBody(),false);
+			$responseBody = json_decode($response->getBody(),true);
+			$renewedAt[] = date("c",$responseBody["expiry"]-10);
 			
 			$this->initialiseRequest();
 			$this->request->setEndpoint(str_replace("http://{$this->apiRoot}","",$responseBody["renew"]));
-			$this->request->authorise($username,$password);
 			$response = $this->request->post();
-			$renewedAt[] = $response->viewFromHeaders("Date");
-			$responseBody = json_encode($response->getBody(),false);
+			$responseBody = json_decode($response->getBody(),true);
+			$renewedAt[] = date("c",$responseBody["expiry"]-10);
 			
 			$this->initialiseRequest();
 			$this->request->setEndpoint(str_replace("http://{$this->apiRoot}","",$responseBody["renew"]));
-			$this->request->authorise($username,$password);
 			$response = $this->request->post();
-			$renewedAt[] = $response->viewFromHeaders("Date");
+			$responseBody = json_decode($response->getBody(),true);
+			$renewedAt[] = date("c",$responseBody["expiry"]-10);
 			
 			
 			//Get full renewals collection
@@ -1073,7 +1070,7 @@
 				
 				$this->assertTrue(array_key_exists("self",$responseBody),"A successfully retrieved token renewals collection does not include a self link.");
 				if(array_key_exists("self",$responseBody)){
-					$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/renewals";
+					$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."$user/renewals?page=1"));
 					$this->assertPattern("/$userPattern/",$responseBody["self"],"A successfully retrieved token renewals collection includes an invalid self link: {$responseBody['self']}");
 				}
 				
@@ -1088,11 +1085,12 @@
 				
 					//Check that contents of random renewal are valid
 					$index = rand(0,2);
-					$responseBody = $responseBody['entries'][$index+1];
+					$responseBody = $responseBody['entries'][$index];
+					rsort($renewedAt);
 					
 					$this->assertTrue(array_key_exists("renewed-at",$responseBody),"A successfully retrieved renewal resource does not include a renewed-at time.");
 					if(array_key_exists("renewed-at",$responseBody)){
-						$this->assertPattern($renewedAt[$index],$responseBody["renewed-at"],"A successfully retrieved renewal resource includes an invalid renewed-at time: {$responseBody['renewed-at']}");
+						$this->assertEqual($renewedAt[$index],$responseBody["renewed-at"],"A successfully retrieved renewal resource includes an invalid renewed-at time: {$responseBody['renewed-at']}");
 					}
 				}
 			}
@@ -1110,13 +1108,13 @@
 				
 				$this->assertTrue(array_key_exists("self",$responseBody),"A successfully retrieved paginated token renewals collection does not include a self link.");
 				if(array_key_exists("self",$responseBody)){
-					$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/users\?page=2&records=1";
+					$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."$user/renewals?page=2&records=2"));
 					$this->assertPattern("/$userPattern/",$responseBody["self"],"A successfully retrieved paginated token renewals collection includes an invalid self link: {$responseBody['self']}");
 				}
 				
 				$this->assertTrue(array_key_exists("prev",$responseBody),"A successfully retrieved paginated token renewals collection does not include a link to the previous page.");
 				if(array_key_exists("prev",$responseBody)){
-					$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot))."\/$user/renewals\?page=1&records=2";
+					$userPattern = "http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."$user/renewals?page=1&records=2"));
 					$this->assertPattern("/$userPattern/",$responseBody["prev"],"A successfully retrieved paginated token renewals collection includes an invalid link to the previous page: {$responseBody['prev']}");
 				}
 				
@@ -1127,7 +1125,7 @@
 				
 				$this->assertTrue(array_key_exists("entries",$responseBody),"A successfully retrieved paginated token renewals collection does not include an array of renewals.");
 				if(array_key_exists("entries",$responseBody)){
-					$this->assertEqual(1,sizeof($responseBody["entries"]),"A successfully retrieved paginated token renewals collection includes the incorrect number of users: ".sizeof($responseBody['entries']));
+					$this->assertEqual(2,sizeof($responseBody["entries"]),"A successfully retrieved paginated token renewals collection includes the incorrect number of users: ".sizeof($responseBody['entries']));
 				}
 			}
 		}
@@ -1148,7 +1146,6 @@
 			//Renew Token
 			$this->initialiseRequest();
 			$this->request->setEndpoint(str_replace("http://{$this->apiRoot}","",$responseBody["renew"]));
-			$this->request->authorise($username,$password);
 			$response = $this->request->post();
 			
 			/**** Test unsupported methods ****/
@@ -1178,7 +1175,7 @@
 			$renewal = str_replace("http://{$this->apiRoot}","",$responseBody["renew"]);
 			
 			$this->initialiseRequest();
-			$this->request->setEndpoint(preg_replace("/?warrant=[a-z0-9]{32}/","",$renewal));
+			$this->request->setEndpoint("$user/renewals");
 			
 			/**** Test Invalid GET Query Parameters ****/
 			$this->request->insertToArguments("page","page");
@@ -1191,7 +1188,7 @@
 			
 			/**** Test Missing 'warrant' parameter ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint(preg_replace("/?warrant=[a-z0-9]{32}/","",$renewal));
+			$this->request->setEndpoint("$user/renewals");
 			$response = $this->request->post();
 			$this->assertEqual(400,$response->getStatusCode(),"/users/{user_id}/renewals endpoint returns incorrect status code for missing query parameters: {$response->getStatusCode()}");
 			$this->assertEqual("Bad Request",$response->getReason(),"/users/{user_id}/renewals endpoint returns incorrect reason for missing query parameters: {$response->getReason()}");
@@ -1200,13 +1197,12 @@
 			
 			/**** Test Invalid 'warrant' parameter ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint(preg_replace("/?warrant=[a-z0-9]{32}/","",$renewal));
+			$this->request->setEndpoint("$user/renewals");
 			$this->request->insertToArguments("warrant",md5("badwarrant"));
 			$response = $this->request->post();
 			$this->assertEqual(400,$response->getStatusCode(),"/users/{user_id}/renewals endpoint returns incorrect status code for invalid warrant: {$response->getStatusCode()}");
 			$this->assertEqual("Bad Request",$response->getReason(),"/users/{user_id}/renewals endpoint returns incorrect reason for invalid warrant: {$response->getReason()}");
 			$this->validateErrorMessage($response,"The following query parameters have invalid values: warrant.","Supplying and invalid warrant to the /users/{user_id}/renewals endpoint returns an invalid message");
-
 		
 			/**** Test using a 'warrant' more than once ****/
 			$this->initialiseRequest();
@@ -1253,7 +1249,7 @@
 			$response = $this->request->post();
 			$this->assertEqual(403,$response->getStatusCode(),"Accessing /users/{user_id}/renewals endpoint with unauthorised credentials returns incorrect status code: {$response->getStatusCode()}");
 			$this->assertEqual("Forbidden",$response->getReason(),"Accessing /users/{user_id}/renewals endpoint with unauthorised credentials returns incorrect reason: {$response->getReason()}");
-			$this->validateErrorMessage($response,"The provided renewals do not have permission to perform this action.","Accessing /users/{user_id}/renewals endpoint with unauthorised credentials returns an invalid message");
+			$this->validateErrorMessage($response,"The provided tokens do not have permission to perform this action.","Accessing /users/{user_id}/renewals endpoint with unauthorised credentials returns an invalid message");
 		}
 		
 		function testUserTokensRenewalNegotiatesContent(){
@@ -1267,13 +1263,11 @@
 			$this->initialiseRequest();
 			$this->request->setEndpoint("$user/tokens");
 			$this->request->authorise($username,$password);
-			$responseBody = json_decode($this->request->get()->getBody(),true);
 			
 			
 			/**** Test that correct content types are returned by default ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint(str_replace("http://{$this->apiRoot}","",$responseBody["renew"]));
-			$this->request->authorise($username,$password);
+			$this->request->setEndpoint("$user/renewals");
 			$response = $this->request->get();
 			
 			$this->assertEqual("application/json;charset=utf-8",$response->viewFromHeaders("Content-Type"),"A successful user token renewal request did not return the correct content representation or charset by default.");
@@ -1282,8 +1276,7 @@
 			
 			/**** Test that supported content types return the correct representation ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint(str_replace("http://{$this->apiRoot}","",$responseBody["renew"]));
-			$this->request->authorise($username,$password);
+			$this->request->setEndpoint("$user/renewals");
 			$this->request->addPreferedContentType("application/json");
 			$this->request->addPreferedCharset("UTF-8");
 			$this->request->addPreferedLanguage("en");
@@ -1294,11 +1287,9 @@
 			$this->assertEqual("application/json;charset=utf-8",$response->viewFromHeaders("Content-Type"),"A successful user tokens renewal request for a supported content representation and charset were not honoured.");
 			$this->assertEqual("en",$response->viewFromHeaders("Content-Language"),"A successful user tokens renewal request for a supported content language was not honoured.");
 			
-			
 			/**** Test that unsupported content types return an error ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint(str_replace("http://{$this->apiRoot}","",$responseBody["renew"]));
-			$this->request->authorise($username,$password);
+			$this->request->setEndpoint("$user/renewals");
 			$this->request->addPreferedContentType("text/html");
 			$this->request->addPreferedCharset("UTF-8");
 			$this->request->addPreferedLanguage("fr");

@@ -16,6 +16,7 @@
 		protected function get(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 			
+			$sqlGateway = new SQLGateway();
 			$authentication = RequestHandler::getAuthorisation();
 			$username = $authentication["key"];
 			$password = $authentication["secret"];
@@ -53,17 +54,40 @@
 					$user->setRefreshSecret($this->encrypt($refreshSecret,$password));
 					$user->setExpires(time()+$lifetime);
 					
-					$sqlGateway = new SQLGateway();
 					$sqlGateway->save($user);
 				}
 			}
+			
+			//Invalidate inactive renewal warrants
+			$searcher = new Searcher();
+			$searcher->addCriterion("action",Criterion::EQUAL,"renew");
+			$searcher->addCriterion("executed",Criterion::IS,null);
+			foreach($sqlGateway->find("Warrant",$searcher) as $warrant){
+				//Remove unused renewal stubs
+				$searcher->clearCriteria();
+				$searcher->addCriterion("token",Criterion::EQUAL,md5($warrant->getCode().$_SERVER['REMOTE_ADDR']));
+				if($stub = $sqlGateway->findUnique("RenewalStub",$searcher)){
+					Magistrate::executeWarrant($warrant->getCode());
+					$sqlGateway->delete($stub);
+				}
+			}
+			
+			//Generate a new renewal stub
+			$warrant = Magistrate::issueWarrant("renew");
+			
+			$stubToken = $warrant.$_SERVER['REMOTE_ADDR'];
+			$accessKey = $this->encrypt($this->decrypt($user->getAccessKey(),$password),$stubToken);
+			$refreshSecret = $this->encrypt($this->decrypt($user->getRefreshSecret(),$password),$stubToken);
+			$userPassword = $this->encrypt($password,$stubToken);
+			$stub = new RenewalStub(md5($stubToken),$accessKey,$refreshSecret,$userPassword);
+			$sqlGateway->save($stub);
 			
 			$payload = array(
 				"self"=>$this->getBase()."/".RequestHandler::getRequestURI(),
 				"key"=>$this->decrypt($user->getAccessKey(),$password),
 				"secret"=>$this->decrypt($user->getAccessSecret(),$password),
 				"expiry"=>$user->getExpires(),
-				"renew"=>$user->getURI()."/renewals?warrant=".Magistrate::issueWarrant("renew")
+				"renew"=>$user->getURI()."/renewals?warrant=$warrant"
 			);
 			ResponseHandler::retrieved($payload,$this->getBase()."/".RequestHandler::getRequestURI(),$user->getModified(),$user->getETag());
 		}
