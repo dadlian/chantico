@@ -1,5 +1,5 @@
 <?php
-	abstract class UserController extends PagedResourceController{
+	abstract class UserController extends ChanticoController{
 		public function execute(){
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();

@@ -2,6 +2,42 @@
 <mapping>
 	<endpointlist>
 		<endpoint>
+			<name>Manage Whitelist</name>
+			<path>whitelist</path>
+			<controller>WhitelistResource</controller>
+			<roles>
+				<administrator>
+					<permissions>
+						<permission1>read</permission1>
+						<permission1>write</permission1>
+					</permissions>
+				</administrator>
+			</roles>
+			<parameters>
+			</parameters>
+			<requirements>
+				<req1>ips</req1>
+			</requirements>
+		</endpoint>
+		<endpoint>
+			<name>Manage Blacklist</name>
+			<path>blacklist</path>
+			<controller>BlacklistResource</controller>
+			<roles>
+				<administrator>
+					<permissions>
+						<permission1>read</permission1>
+						<permission1>write</permission1>
+					</permissions>
+				</administrator>
+			</roles>
+			<parameters>
+			</parameters>
+			<requirements>
+				<req1>ips</req1>
+			</requirements>
+		</endpoint>
+		<endpoint>
 			<name>User Collection</name>
 			<path>users</path>
 			<controller>UserCollection</controller>

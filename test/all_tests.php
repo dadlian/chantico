@@ -16,7 +16,7 @@
 		function __construct(){
 			parent::__construct();
 			$this->addFile(dirname(__FILE__).'/user_tests.php');
-			//$this->addFile(dirname(__FILE__).'/ip_tests.php');
+			$this->addFile(dirname(__FILE__).'/ip_tests.php');
 		}
 	}
 ?>
