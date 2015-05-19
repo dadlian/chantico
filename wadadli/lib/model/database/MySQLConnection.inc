@@ -119,6 +119,7 @@
 			}
 			
 			$resultFields = $preparedStatement->result_metadata()->fetch_fields();
+			$preparedStatement->store_result();
 			
 			foreach($resultFields as $resultField){
 				$bindVariables[] = &$resultRow[$resultField->name];

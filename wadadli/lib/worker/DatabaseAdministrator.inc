@@ -117,7 +117,7 @@
 		}
 		
 		//Builds the connection using the passed connection parameters
-		protected static function buildConnection($hostname, $username, $password, $database){
+		protected static function buildConnection($hostname, $username, $password, $database,$tablePrefix=null){
 			if(self::$activeConnection){
 				self::$activeConnection->close();
 			}
@@ -126,6 +126,7 @@
 			$databaseConnection->connect();
 			self::$activeConnection = $databaseConnection;
 			self::$knownTables = array();
+			self::$tablePrefix = $tablePrefix?$tablePrefix."_":$tablePrefix;
 		}
 		
 		/*

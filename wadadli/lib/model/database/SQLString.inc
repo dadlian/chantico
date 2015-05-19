@@ -28,7 +28,7 @@
 		public function getTables(){			
 			$tableCommands = "(?:\s+INTO|\s+TO|^UPDATE|\s+FROM|\s+TABLE(?: IF NOT EXISTS)?|\s+REFERENCES|^DESC|\s+INDEX ON)\s+";
 			$tableReference = "\w+(?:\s+AS\s+\w+)?";
-			$tableDelimeters = "(?:\s*,\s*|\s+JOIN\s+)";
+			$tableDelimeters = "(?:\s*,\s*|\s+(?:(?:LEFT|RIGHT|INNER|OUTER)\s+)?JOIN\s+)";
 			$tableCondition = "\s+ON\s+[\w\.]+\s+\=\s+[\w\.]+";
 			preg_match_all("/$tableCommands($tableReference(?:$tableDelimeters$tableReference(?:$tableCondition)?)*)/i", $this->getSqlString(), $tables);
 			

@@ -112,7 +112,7 @@
 	require_once(dirname(__FILE__)."/view/LoginView.inc");
 	
 	require_once(dirname(__FILE__)."/view/WadadliPageTemplate.inc");
-		
+	
 	//Import activated modules
 	foreach(explode(",",SettingsManager::getSetting("modules","enabled")) as $module){
 		require_all(SettingsManager::getSetting("install","projectPath")."/wadadli/modules/$module");
