@@ -129,7 +129,7 @@
 			$uri = "http://".SettingsManager::getSetting("install","urlroot")."/".RequestHandler::getRequestURI();
 			$payload = array(
 				"key"=>$accessKey,
-				"secret"=>$refreshSecret,
+				"secret"=>$accessSecret,
 				"expiry"=>$user->getExpires(),
 				"renew"=>$user->getURI()."/renewals?warrant=$warrant"
 			);

@@ -119,6 +119,7 @@
 	}
 	
 	//Include Wadadli Project Files
+	require_once(SettingsManager::getSetting("install","projectPath")."/controller/ChanticoController.inc");
 	require_all(SettingsManager::getSetting("install","projectPath")."/controller");
 	require_all(SettingsManager::getSetting("install","projectPath")."/model");
 	require_all(SettingsManager::getSetting("install","projectPath")."/view");
