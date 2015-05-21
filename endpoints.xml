@@ -108,9 +108,13 @@
 				<administrator>
 					<permissions>
 						<permission1>read</permission1>
-						<permission2>write</permission2>
 					</permissions>
 				</administrator>
+				<refresher>
+					<permissions>
+						<permission1>write</permission1>
+					</permissions>
+				</refresher>
 			</roles>
 			<parameters>
 				<param1>user</param1>
