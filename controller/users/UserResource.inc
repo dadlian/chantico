@@ -17,42 +17,82 @@
 				ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
 			}
 			
-			//Update Access
-			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
-			$request->setEndpoint($user->getAccessEndpoint());
-			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
-			$request->setContentType("application/json");
-			$request->assureConsistency();
-			$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
-			$request->setBody($payload);
-			$response = $request->put();
-			$body = json_decode($response->getBody(),true);
-			
-			if($response->getStatusCode() == 400){
-				ResponseHandler::bad($body["message"]);
-			}else if($response->getStatusCode() != 200){
-				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
-			}
-			
-			//Get corresponding access token
+			//Get user's APIToken
 			$searcher->clearCriteria();
 			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
 			$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
 			
 			//Save user changes to Chantico
-			$userAuthentication = RequestHandler::getAuthorisation();
+			$authentication = $this->getFromContent("authentication");
 			$user->setUsername($this->getFromContent("username"));
-			if($this->getFromContent("authentication")){
-				$user->setAuthentication(md5($this->getFromContent("authentication")));
-				$user->setAccessKey($this->encrypt($this->decrypt($user->getAccessKey(),$userAuthentication["secret"]),$this->getFromContent("authentication")));
-				$user->setAccessSecret($this->encrypt($this->decrypt($user->getAccessSecret(),$userAuthentication["secret"]),$this->getFromContent("authentication")));
-				$user->setRefreshSecret($this->encrypt($this->decrypt($user->getRefreshSecret(),$userAuthentication["secret"]),$this->getFromContent("authentication")));
+			if($authentication){
+				//Delete Old Access Tokens				
+				$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+				$request->setEndpoint($user->getAccessEndpoint());
+				$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+				$request->setContentType("application/json");
+				$request->assureConsistency();
+				$response = $request->delete();
+				
+				//Create Fresh Access Tokens
+				$request->setEndpoint(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_PATH)."/access");
+				$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+				$request->setContentType("application/json");
+				$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
+				$request->setBody($payload);
+				$response = $request->post();
+				$body = json_decode($response->getBody(),true);
+				
+				if($response->getStatusCode() == 400){
+					ResponseHandler::bad(str_replace("arguments","directives",$body["message"]));
+				}else if($response->getStatusCode() != 201){
+					ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
+				}
+				
+				$accessEndpoint = parse_url($body["self"],PHP_URL_PATH);
+				$tokensEndpoint = parse_url($body["tokens"],PHP_URL_PATH);
+				$accessKey = $body["active-token"]["key"];
+				$refreshSecret = $body["active-token"]["refresh"];
+				
+				//Refresh Access Token
+				$request->setEndpoint($tokensEndpoint);
+				$request->authorise($accessKey,$refreshSecret);
+				$request->setBody(json_encode(array("lifetime"=>SettingsManager::getSetting("options","lifetime"))));
+				$response = $request->post();
+				
+				if($response->getStatusCode() != 201){
+					ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
+				}
+				
+				$body = json_decode($response->getBody(),true);
+				$accessKey = $body["key"];
+				$accessSecret = $body["secret"];
+				$refreshSecret = $body["refresh"];
+				$lifetime = $body["lifetime"];
+				
+				$user->setAuthentication(md5($authentication));
+				$user->setAccessKey($this->encrypt($accessKey,$authentication));
+				$user->setAccessSecret($this->encrypt($accessSecret,$authentication));
+				$user->setRefreshSecret($this->encrypt($refreshSecret,$authentication));
+				$user->setAccessEndpoint($accessEndpoint);
+				$user->setExpires(time()+$lifetime);
+			}else{
+				//Update Access
+				$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+				$request->setEndpoint($user->getAccessEndpoint());
+				$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+				$request->setContentType("application/json");
+				$request->assureConsistency();
+				$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
+				$request->setBody($payload);
+				$response = $request->put();
+				$body = json_decode($response->getBody(),true);
 			}
 			
 			$user->setOptions($this->getFromContent("options",array()));
 			$sqlGateway->save($user);
 			
-			//Update APIToken for User to Access its tokens
+			//Update APIToken for User to Access its
 			$apiToken->setAccessKey(md5($user->getUsername()));
 			$apiToken->setAccessSecret($user->getAuthentication());
 			$apiToken->setRefreshSecret($user->getAuthentication());

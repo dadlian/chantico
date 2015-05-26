@@ -14,7 +14,6 @@
 			$searcher->addCriterion("title",Criterion::EQUAL,"whitelist");
 			$whitelist = $sqlGateway->findUnique("IPList",$searcher);
 			if($whitelist && $whitelist->getEntries() && !in_array($_SERVER['REMOTE_ADDR'],$whitelist->getEntries())){
-				var_dump($whitelist->getEntries());
 				ResponseHandler::forbidden("The originating IP address is not permitted to make requests.");
 			}
 			

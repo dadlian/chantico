@@ -89,6 +89,7 @@
 				"expiry"=>$user->getExpires(),
 				"renew"=>$user->getURI()."/renewals?warrant=$warrant"
 			);
+			
 			ResponseHandler::retrieved($payload,$this->getBase()."/".RequestHandler::getRequestURI(),$user->getModified(),$user->getETag());
 		}
 	}
