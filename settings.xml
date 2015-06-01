@@ -51,7 +51,7 @@
 		<settings>
 			<name>options</name>
 			<values>
-				<apiuri>http://datashanty.com/gbsv/api</apiuri>
+				<apiuri>http://gbsv.mywadapi.com</apiuri>
 				<key>366d21dd0b8ce4001f2e883b58c40037</key>
 				<secret>6746e23ac7ab25e8f1eb77570d49180a</secret>
 				<lifetime>3600</lifetime>
