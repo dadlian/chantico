@@ -1,13 +1,17 @@
 <?php
-	class WhitelistResource extends IPListResource{
+	class WhitelistResource extends ChanticoController{
 		protected function get(){
-			$whitelist = $this->loadIPList("whitelist");
-			$payload = $this->assemblePayload($whitelist->getEntries());
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			$whitelist = $api->getWhitelist();
+			$payload = $this->assemblePayload($api->getWhitelist()->getEntries());
 			
 			ResponseHandler::retrieved($payload,$payload["self"],$whitelist->getModified(),$whitelist->getETag());
 		}
 		
 		protected function put(){
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			$whitelist = $api->getWhitelist();
+			
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
 				
@@ -21,14 +25,14 @@
 				}
 			}
 			
-			$whitelist = $this->loadIPList("whitelist");
 			$whitelist->setEntries($seenIPs);
-			$sqlGateway->save($whitelist);
+			$api->setWhitelist($whitelist);
 			
-			$blacklist = $this->loadIPList("blacklist");
+			$blacklist = $api->getBlacklist();
 			$blacklist->setEntries(array_diff($blacklist->getEntries(),$seenIPs));
-			$sqlGateway->save($blacklist);
+			$api->setBlacklist($blacklist);
 			
+			$sqlGateway->save($api);
 			$payload = $this->assemblePayload($whitelist->getEntries());
 			ResponseHandler::modified($payload,$payload["self"]);
 		}
@@ -49,7 +53,9 @@
 		}
 	
 		protected function isConsistent($modifiedDate,$eTag){
-			$whitelist = $this->loadIPList("whitelist");
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			$whitelist = $api->getWhitelist();
+			
 			return $modifiedDate == $whitelist->getModified() && $eTag == $whitelist->getETag();
 		}
 		

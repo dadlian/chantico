@@ -1,17 +1,17 @@
 <?php
 	class UserCollection extends UserController{
 		protected function post(){
-			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
-			$searcher->addCriterion("username",Criterion::EQUAL,$this->getFromContent("username"));
-			if($sqlGateway->findUnique("ManagedAccess",$searcher)){
-				ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			foreach($api->getUsers() as $user){
+				if($user->getUsername() == $this->getFromContent("username")){
+					ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
+				}
 			}
 			
 			//Create New Access
-			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
-			$request->setEndpoint(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_PATH)."/access");
-			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
+			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
+			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");
 			$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
 			$request->setBody($payload);
@@ -55,7 +55,10 @@
 			$user->setAccessEndpoint($accessEndpoint,$this->getFromContent("authentication"));
 			$user->setExpires(time()+$lifetime);
 			$user->setOptions($this->getFromContent("options",array()));
-			$sqlGateway->save($user);
+			
+			$sqlGateway = new SQLGateway();
+			$api->appendToUsers($user);
+			$sqlGateway->save($api);
 			
 			//Create APIToken for User to Access its tokens
 			$sqlGateway->save(new APIToken("user",0,md5($user->getUsername()),$user->getAuthentication(),$user->getAuthentication()));

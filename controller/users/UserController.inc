@@ -72,21 +72,24 @@
 				$usernames = RequestHandler::getQueryParameter("usernames");
 				$options = RequestHandler::getQueryParameter("options");
 				$access = RequestHandler::getQueryParameter("access");
+				
+				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+				$apiCheck = "id IN (SELECT value FROM APIUsers WHERE api = '{$api->getId()}')";
 				if($usernames){
 					$patterns = array();
 					foreach(explode(",",$usernames) as $username){
 						$patterns[] = "username LIKE '$username'";
 					}
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE ".implode(" OR ",$patterns));
+					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck AND (".implode(" OR ",$patterns).")");
 				}else if($options){
 					$parameters = preg_split("/~/",$options);
 					$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
-							"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}'";
+							"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}' AND $apiCheck";
 					$countResult = DatabaseAdministrator::execute($query);
 				}else if($access){
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE accessEndpoint = '$access'");
+					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE accessEndpoint = '$access' AND $apiCheck");
 				}else{
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess");
+					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck");
 				}
 				
 				$count = $countResult[0]["user"];
@@ -103,13 +106,16 @@
 			$usernames = RequestHandler::getQueryParameter("usernames");
 			$options = RequestHandler::getQueryParameter("options");
 			$access = RequestHandler::getQueryParameter("access");
+			
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			$apiCheck = "id IN (SELECT value FROM APIUsers WHERE api = '{$api->getId()}')";
 			if($usernames){
 				$patterns = array();
 				foreach(explode(",",$usernames) as $username){
 					$patterns[] = "username LIKE '$username'";
 				}
 				
-				$results = DatabaseAdministrator::execute("SELECT id FROM ManagedAccess WHERE ".implode(" OR ",$patterns));
+				$results = DatabaseAdministrator::execute("SELECT id FROM ManagedAccess WHERE $apiCheck AND (".implode(" OR ",$patterns).")");
 				$users = array();
 				foreach($results as $user){
 					$users[] = $user["id"];
@@ -119,7 +125,7 @@
 			}else if($options){
 				$parameters = preg_split("/~/",$options);
 				$results = DatabaseAdministrator::execute("SELECT A.id FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
-										"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}'");
+										"WHERE $apiCheck AND name = '{$parameters[0]}' AND value = '{$parameters[1]}'");
 				$users = array();
 				foreach($results as $user){
 					$users[] = $user["id"];
@@ -130,6 +136,7 @@
 				$searcher->addCriterion("accessEndpoint",Criterion::EQUAL,$access);
 			}
 			
+			$searcher->addCriterion("API","id",$api->getId());
 			foreach($sqlGateway->find("ManagedAccess",$searcher,new Sorter(),$count,$start) as $user){
 				$payload[] = $this->assemblePayload($user);
 			}
@@ -138,8 +145,10 @@
 		}
 		
 		protected function assemblePayload($user){
-			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
-			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			
+			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
+			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setEndpoint($user->getAccessEndpoint());
 			$response = $request->get();
 			
@@ -155,12 +164,13 @@
 			}else{
 				return array();
 			}
-		
+			
+			$userURI = preg_replace("/\{api_id\}/",$api->getId(),$user->getURI());
 			$payload = array(
-				"self"=>$user->getURI(),
+				"self"=>$userURI,
 				"username"=>$user->getUsername(),
 				"role"=>$role,
-				"tokens"=>"{$user->getURI()}/tokens",
+				"tokens"=>"$userURI/tokens",
 				"options"=>$options
 			);
 			

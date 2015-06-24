@@ -8,6 +8,7 @@
 		
 		protected function put(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
@@ -27,16 +28,16 @@
 			$user->setUsername($this->getFromContent("username"));
 			if($authentication){
 				//Delete Old Access Tokens				
-				$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 				$request->setEndpoint($user->getAccessEndpoint());
-				$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setContentType("application/json");
 				$request->assureConsistency();
 				$response = $request->delete();
 				
 				//Create Fresh Access Tokens
-				$request->setEndpoint(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_PATH)."/access");
-				$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+				$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
+				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setContentType("application/json");
 				$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
 				$request->setBody($payload);
@@ -78,9 +79,9 @@
 				$user->setExpires(time()+$lifetime);
 			}else{
 				//Update Access
-				$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 				$request->setEndpoint($user->getAccessEndpoint());
-				$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setContentType("application/json");
 				$request->assureConsistency();
 				$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
@@ -104,10 +105,11 @@
 		
 		protected function delete(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			
-			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 			$request->setEndpoint($user->getAccessEndpoint());
-			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");
 			$request->assureConsistency();
 			$response = $request->delete();

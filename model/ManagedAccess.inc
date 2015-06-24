@@ -25,11 +25,11 @@
 		protected $options;
 		
 		protected function getURI(){
-			return "http://".SettingsManager::getSetting("install","urlroot")."/users/{$this->getId()}";
+			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{api_id}/users/{$this->getId()}";
 		}
 		
 		protected function getURITemplate(){
-			return "http://".SettingsManager::getSetting("install","urlroot")."/users/{user_id}";
+			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{api_id}/users/{user_id}";
 		}
 		
 		protected function getETag(){

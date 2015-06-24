@@ -15,6 +15,7 @@
 		
 		protected function get(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			
 			$sqlGateway = new SQLGateway();
 			$authentication = RequestHandler::getAuthorisation();
@@ -22,9 +23,9 @@
 			$password = $authentication["secret"];
 			
 			//Retrieve user access resource
-			$request = new WadapiRequest(parse_url(SettingsManager::getSetting("options","apiuri"),PHP_URL_HOST));
+			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 			$request->setEndpoint($user->getAccessEndpoint());
-			$request->authorise(SettingsManager::getSetting("options","key"),SettingsManager::getSetting("options","secret"));
+			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");
 			$response = $request->get();
 			

@@ -3,7 +3,7 @@
 	<endpointlist>
 		<endpoint>
 			<name>Manage Whitelist</name>
-			<path>whitelist</path>
+			<path>apis/@/whitelist</path>
 			<controller>WhitelistResource</controller>
 			<roles>
 				<administrator>
@@ -14,6 +14,7 @@
 				</administrator>
 			</roles>
 			<parameters>
+				<param1>api</param1>
 			</parameters>
 			<requirements>
 				<req1>ips</req1>
@@ -21,7 +22,7 @@
 		</endpoint>
 		<endpoint>
 			<name>Manage Blacklist</name>
-			<path>blacklist</path>
+			<path>apis/@/blacklist</path>
 			<controller>BlacklistResource</controller>
 			<roles>
 				<administrator>
@@ -32,6 +33,7 @@
 				</administrator>
 			</roles>
 			<parameters>
+				<param1>api</param1>
 			</parameters>
 			<requirements>
 				<req1>ips</req1>
@@ -39,7 +41,7 @@
 		</endpoint>
 		<endpoint>
 			<name>User Collection</name>
-			<path>users</path>
+			<path>apis/@/users</path>
 			<controller>UserCollection</controller>
 			<roles>
 				<administrator>
@@ -50,6 +52,7 @@
 				</administrator>
 			</roles>
 			<parameters>
+				<param1>api</param1>
 			</parameters>
 			<requirements>
 				<req1>username</req1>
@@ -59,7 +62,7 @@
 		</endpoint>
 		<endpoint>
 			<name>User Resource</name>
-			<path>users/@</path>
+			<path>apis/@/users/@</path>
 			<controller>UserResource</controller>
 			<roles>
 				<administrator>
@@ -76,7 +79,8 @@
 				</user>
 			</roles>
 			<parameters>
-				<param1>user</param1>
+				<param1>api</param1>
+				<param2>user</param2>
 			</parameters>
 			<requirements>
 				<req1>username</req1>
@@ -85,7 +89,7 @@
 		</endpoint>
 		<endpoint>
 			<name>User Tokens Resource</name>
-			<path>users/@/tokens</path>
+			<path>apis/@/users/@/tokens</path>
 			<controller>UserTokensResource</controller>
 			<roles>
 				<user>
@@ -95,14 +99,15 @@
 				</user>
 			</roles>
 			<parameters>
-				<param1>user</param1>
+				<param1>api</param1>
+				<param2>user</param2>
 			</parameters>
 			<requirements>
 			</requirements>
 		</endpoint>
 		<endpoint>
 			<name>User Renewals Collection</name>
-			<path>users/@/renewals</path>
+			<path>apis/@/users/@/renewals</path>
 			<controller>UserRenewalsCollection</controller>
 			<roles>
 				<administrator>
@@ -117,7 +122,8 @@
 				</refresher>
 			</roles>
 			<parameters>
-				<param1>user</param1>
+				<param1>api</param1>
+				<param2>user</param2>
 			</parameters>
 			<requirements>
 			</requirements>
