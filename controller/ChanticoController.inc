@@ -23,7 +23,7 @@
 				$sqlGateway = new SQLGateway();
 				$searcher = new Searcher();
 				$searcher->addCriterion($field,Criterion::EQUAL,$value);
-				$searcher->addCriterion("API","id",$api->getId());
+				$searcher->addCriterion("API",$api->getId(),"users");
 				
 				if(!$sqlGateway->findUnique($class,$searcher)){
 					ResponseHandler::missing("There is presently no resource with the given URI.");

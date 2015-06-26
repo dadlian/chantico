@@ -84,7 +84,7 @@
 				}else if($options){
 					$parameters = preg_split("/~/",$options);
 					$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
-							"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}' AND $apiCheck";
+							"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}' AND A.$apiCheck";
 					$countResult = DatabaseAdministrator::execute($query);
 				}else if($access){
 					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE accessEndpoint = '$access' AND $apiCheck");
@@ -125,7 +125,7 @@
 			}else if($options){
 				$parameters = preg_split("/~/",$options);
 				$results = DatabaseAdministrator::execute("SELECT A.id FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
-										"WHERE $apiCheck AND name = '{$parameters[0]}' AND value = '{$parameters[1]}'");
+										"WHERE A.$apiCheck AND name = '{$parameters[0]}' AND value = '{$parameters[1]}'");
 				$users = array();
 				foreach($results as $user){
 					$users[] = $user["id"];
@@ -136,7 +136,7 @@
 				$searcher->addCriterion("accessEndpoint",Criterion::EQUAL,$access);
 			}
 			
-			$searcher->addCriterion("API","id",$api->getId());
+			$searcher->addCriterion("API",$api->getId(),"users");
 			foreach($sqlGateway->find("ManagedAccess",$searcher,new Sorter(),$count,$start) as $user){
 				$payload[] = $this->assemblePayload($user);
 			}

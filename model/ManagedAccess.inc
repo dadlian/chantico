@@ -25,7 +25,12 @@
 		protected $options;
 		
 		protected function getURI(){
-			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{api_id}/users/{$this->getId()}";
+			$sqlGateway = new SQLGateway();
+			$searcher = new Searcher();
+			$searcher->addCriterion("users",Criterion::INCLUDES,$this->getId());
+			$api = $sqlGateway->findUnique("API",$searcher);
+			
+			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{$api->getId()}/users/{$this->getId()}";
 		}
 		
 		protected function getURITemplate(){
