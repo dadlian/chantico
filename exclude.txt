@@ -6,5 +6,5 @@ imports
 uploads
 doc
 test
-api-doc.odt
+*api-doc.odt*
 settings.*.xml

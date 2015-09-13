@@ -116,6 +116,14 @@
 			
 			if($response->getStatusCode() == 200){
 				CryptKeeper::bury($user);
+				
+				//Delete APIToken associated with user
+				$sqlGateway = new SQLGateway();
+				$searcher = new Searcher();
+				$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
+				$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
+				$sqlGateway->delete($apiToken);
+				
 				ResponseHandler::deleted("User: /".RequestHandler::getRequestURI().", has been removed.");
 			}else{
 				ResponseHandler::error("User: /".RequestHandler::getRequestURI().", cannot be removed.");
