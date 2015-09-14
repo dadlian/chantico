@@ -25,7 +25,8 @@
 				$searcher->addCriterion($field,Criterion::EQUAL,$value);
 				$searcher->addCriterion("API",$api->getId(),"users");
 				
-				if(!$sqlGateway->findUnique($class,$searcher)){
+				$user = $sqlGateway->findUnique($class,$searcher);
+				if(!$user && !CryptKeeper::exhume($value,$field)){
 					ResponseHandler::missing("There is presently no resource with the given URI.");
 				}
 			}

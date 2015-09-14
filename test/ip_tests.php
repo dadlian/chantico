@@ -3,7 +3,7 @@
 		function testSuccessfulWhitelistManipulation(){
 			/**** Test Whitelist is Successfully Retrieved ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			
 			//Test for Valid Status Line
@@ -12,7 +12,7 @@
 			
 			//Test for Mandatory Headers
 			$datePattern = "/".gmdate("D, d M Y")." [0-2][0-9]:[0-5][0-9]:[0-5][0-9] GMT/";
-			$locationPattern = "/http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."/whitelist"))."/";
+			$locationPattern = "/http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."/apis/14358019264956/whitelist"))."/";
 			
 			$this->assertPattern($datePattern,$response->viewFromHeaders("Date"),"Successful whitelist retrieval responds with a malformed or incorrect Date Header: {$response->viewFromHeaders('Date')}");
 			$this->assertEqual(strlen($response->getBody()),$response->viewFromHeaders("Content-Length"),"Successful whitelist retrieval responds with the incorrect Content-Length: ".$response->viewFromHeaders("Content-Length"));
@@ -21,7 +21,7 @@
 			$this->assertPattern("/^[a-f0-9]{32}$/",$response->viewFromHeaders("ETag"),"Successful whitelist retrieval responds with a missing or malformed ETag: {$response->viewFromHeaders('Last-Modified')}");
 						
 			//Ensure there are no unexpected Headers
-			$this->assertEqual(9,sizeof($response->getHeaders()),"Successful whitelist retrieval responds with superfluous headers (9 expected, ".sizeof($response->getHeaders())." given)");
+			$this->assertEqual(9,sizeof($response->getHeaders(false)),"Successful whitelist retrieval responds with superfluous headers (9 expected, ".sizeof($response->getHeaders())." given)");
 						
 			//Test Retrieved Group Content
 			$this->assertTrue($this->validJSON($response->getBody()),"Successful whitelist retrieval does not return valid JSON in the response body.");
@@ -49,16 +49,15 @@
 			$newIPs = array("125.252.133.3","129.162.15.116","3.8.237.84","127.0.0.1");
 			
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
-			$response = $this->request->get();
-			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
+			$this->request->assureConsistency();
 			$this->request->setBody(json_encode(array("ips"=>$newIPs)));
 			$response = $this->request->put();
-			
+			exit;
 			//Test for Valid Status Line
 			$this->assertEqual(200,$response->getStatusCode(),"Successful whitelist modification returns the wrong status code: {$response->getStatusCode()}");
 			$this->assertEqual("OK",$response->getReason(),"Successful whitelist modification returns the wrong reason: {$response->getReason()}");
-						
+
 			//Test for Modified Group Content
 			$this->assertTrue($this->validJSON($response->getBody()),"Successful whitelist modification does not return valid JSON in the response body.");
 			if($this->validJSON($response->getBody())){
@@ -71,8 +70,7 @@
 			}
 			
 			//Test that modifications were saved
-			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			
 			if($this->validJSON($response->getBody())){
@@ -87,26 +85,27 @@
 		
 		function testWhitelistManipulationHandlesUnsupportedRequests(){
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			
 			
 			/**** Test unsupported methods ****/
+			$this->request->setBody(json_encode(array("ips"=>array())));
 			$response = $this->request->post();
-			$this->assertEqual(405,$response->getStatusCode(),"/whitelist endpoint returns incorrect status code for unsupported method POST: {$response->getStatusCode()}");
-			$this->assertEqual("Method Not Allowed",$response->getReason(),"/whitelist endpoint returns incorrect reason for unsupported method POST: {$response->getReason()}");
-			$this->validateErrorMessage($response,"/whitelist does not support the POST method.","Making an unsupported POST request to the /whitelist endpoint returns an invalid message");
+			$this->assertEqual(405,$response->getStatusCode(),"/apis/14358019264956/whitelist endpoint returns incorrect status code for unsupported method POST: {$response->getStatusCode()}");
+			$this->assertEqual("Method Not Allowed",$response->getReason(),"/apis/14358019264956/whitelist endpoint returns incorrect reason for unsupported method POST: {$response->getReason()}");
+			$this->validateErrorMessage($response,"/apis/14358019264956/whitelist does not support the POST method.","Making an unsupported POST request to the /whitelist endpoint returns an invalid message");
 			
 			$response = $this->request->delete();
-			$this->assertEqual(405,$response->getStatusCode(),"/whitelist endpoint returns incorrect status code for unsupported method DELETE: {$response->getStatusCode()}");
-			$this->assertEqual("Method Not Allowed",$response->getReason(),"/whitelist endpoint returns incorrect reason for unsupported method DELETE: {$response->getReason()}");
-			$this->validateErrorMessage($response,"/whitelist does not support the DELETE method.","Making an unsupported DELETE request to the /whitelist endpoint returns an invalid message");
+			$this->assertEqual(405,$response->getStatusCode(),"/apis/14358019264956/whitelist endpoint returns incorrect status code for unsupported method DELETE: {$response->getStatusCode()}");
+			$this->assertEqual("Method Not Allowed",$response->getReason(),"/apis/14358019264956/whitelist endpoint returns incorrect reason for unsupported method DELETE: {$response->getReason()}");
+			$this->validateErrorMessage($response,"/apis/14358019264956/whitelist does not support the DELETE method.","Making an unsupported DELETE request to the /whitelist endpoint returns an invalid message");
 		}
 		
 		function testWhitelistManipulationHandlesMissingOrInvalidArguments(){
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			
@@ -114,31 +113,31 @@
 			/**** Test Non-JSON Request Body ****/
 			$this->request->setBody("Invalid JSON");
 			$response = $this->request->put();
-			$this->assertEqual(400,$response->getStatusCode(),"/whitelist endpoint returns incorrect status code for invalid JSON request body: {$response->getStatusCode()}");
-			$this->assertEqual("Bad Request",$response->getReason(),"/whitelist endpoint returns incorrect reason for invalid JSON request body: {$response->getReason()}");
-			$this->validateErrorMessage($response,"Request arguments most be supplied using valid JSON.","PUTing to the /whitelist endpoint with a non-JSON body returns an invalid message");
+			$this->assertEqual(400,$response->getStatusCode(),"/apis/14358019264956/whitelist endpoint returns incorrect status code for invalid JSON request body: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"/apis/14358019264956/whitelist endpoint returns incorrect reason for invalid JSON request body: {$response->getReason()}");
+			$this->validateErrorMessage($response,"Request arguments must be supplied using valid JSON.","PUTing to the /whitelist endpoint with a non-JSON body returns an invalid message");
 			
 			
 			/**** Test Missing Required Arguments ****/
 			$this->request->setBody(json_encode(array()));
 			$response = $this->request->put();
-			$this->assertEqual(400,$response->getStatusCode(),"/whitelist endpoint returns incorrect status code for missing required arguments: {$response->getStatusCode()}");
-			$this->assertEqual("Bad Request",$response->getReason(),"/whitelist endpoint returns incorrect reason for missing required arguments: {$response->getReason()}");
+			$this->assertEqual(400,$response->getStatusCode(),"/apis/14358019264956/whitelist endpoint returns incorrect status code for missing required arguments: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"/apis/14358019264956/whitelist endpoint returns incorrect reason for missing required arguments: {$response->getReason()}");
 			$this->validateErrorMessage($response,"The following arguments are required, but have not been supplied: ips.","Failing to supply required arguments to the /whitelist endpoint returns an invalid message");
 			
 			
 			/**** Test Invalid Arguments ****/
 			$this->request->setBody(json_encode(array("ips"=>array("232323.2402.2402.12"))));
 			$response = $this->request->put();
-			$this->assertEqual(400,$response->getStatusCode(),"/whitelist endpoint returns incorrect status code for invalid arguments: {$response->getStatusCode()}");
-			$this->assertEqual("Bad Request",$response->getReason(),"/whitelist endpoint returns incorrect reason for invalid arguments: {$response->getReason()}");
+			$this->assertEqual(400,$response->getStatusCode(),"/apis/14358019264956/whitelist endpoint returns incorrect status code for invalid arguments: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"/apis/14358019264956/whitelist endpoint returns incorrect reason for invalid arguments: {$response->getReason()}");
 			$this->validateErrorMessage($response,"The following arguments have invalid values: ips.","Supplying invalid argument values to the /whitelist endpoint returns an invalid message");
 						
 						
 			/**** Test duplicate URIs  in organisation list ****/
 			$newIPs = array("ips"=>array("232.123.69.42","232.123.69.42"));
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode($newIPs));
@@ -151,7 +150,7 @@
 		
 		function testWhitelistManipulationHandlesUnauthorisedRequests(){
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			
@@ -160,7 +159,7 @@
 			$this->request->takeFromHeaders("Authorization");
 			$response = $this->request->get();
 			$this->assertEqual(401,$response->getStatusCode(),"Unauthorised request to /whitelist endpoint returns incorrect status code: {$response->getStatusCode()}");
-			$this->assertEqual("Unauthorized",$response->getReason(),"Unauthorised request to /whitelist endpoint returns incorrect reason: {$response->getReason()}");
+			$this->assertEqual("Authorization Required",$response->getReason(),"Unauthorised request to /whitelist endpoint returns incorrect reason: {$response->getReason()}");
 			$this->assertEqual("Basic",$response->viewFromHeaders("WWW-Authenticate"),"Unauthorised request to /whitelists/{whitelist_slug}/ip endpoint does not return correct WWW-Authenticate header: {$response->viewFromHeaders('WWW-Authenticate')}");
 			$this->validateErrorMessage($response,"Please use Basic Authentication to authorise this request.","Sending an unauthorised request to the /whitelist endpoint returns an invalid message");
 			
@@ -176,7 +175,7 @@
 		function testWhitelistManipulationNegotiatesContent(){
 			/**** Test that correct content types are returned by default ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			
 			$this->assertEqual("application/json;charset=utf-8",$response->viewFromHeaders("Content-Type"),"A successful whitelist retrieval request did not return the correct content representation or charset by default.");
@@ -185,7 +184,7 @@
 			
 			/**** Test that supported content types return the correct representation ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$this->request->addPreferedContentType("application/json");
 			$this->request->addPreferedCharset("UTF-8");
 			$this->request->addPreferedLanguage("en");
@@ -199,7 +198,7 @@
 			
 			/**** Test that unsupported content types return an error ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$this->request->addPreferedContentType("text/html");
 			$this->request->addPreferedCharset("UTF-8");
 			$this->request->addPreferedLanguage("fr");
@@ -212,7 +211,7 @@
 		
 		function testWhitelistManipulationConcurrencyChecks(){
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$validResponse = $this->request->get();
 			
 			
@@ -226,7 +225,7 @@
 			
 			/**** Test manipulating a resource with invalid concurrency tags ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>array("5.154.167.63","16.121.217.65","127.0.0.1"))));
@@ -242,7 +241,7 @@
 		function testSuccessfulBlacklistManipulation(){
 			/**** Test Blacklist is Successfully Retrieved ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			
 			//Test for Valid Status Line
@@ -251,7 +250,7 @@
 			
 			//Test for Mandatory Headers
 			$datePattern = "/".gmdate("D, d M Y")." [0-2][0-9]:[0-5][0-9]:[0-5][0-9] GMT/";
-			$locationPattern = "/http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."/blacklist"))."/";
+			$locationPattern = "/http:\/\/".str_replace("/","\/",preg_quote($this->apiRoot."/apis/14358019264956/blacklist"))."/";
 			
 			$this->assertPattern($datePattern,$response->viewFromHeaders("Date"),"Successful blacklist retrieval responds with a malformed or incorrect Date Header: {$response->viewFromHeaders('Date')}");
 			$this->assertEqual(strlen($response->getBody()),$response->viewFromHeaders("Content-Length"),"Successful blacklist retrieval responds with the incorrect Content-Length: ".$response->viewFromHeaders("Content-Length"));
@@ -260,7 +259,7 @@
 			$this->assertPattern("/^[a-f0-9]{32}$/",$response->viewFromHeaders("ETag"),"Successful blacklist retrieval responds with a missing or malformed ETag: {$response->viewFromHeaders('Last-Modified')}");
 						
 			//Ensure there are no unexpected Headers
-			$this->assertEqual(9,sizeof($response->getHeaders()),"Successful blacklist retrieval responds with superfluous headers (9 expected, ".sizeof($response->getHeaders())." given)");
+			$this->assertEqual(9,sizeof($response->getHeaders(false)),"Successful blacklist retrieval responds with superfluous headers (9 expected, ".sizeof($response->getHeaders())." given)");
 						
 			//Test Retrieved Group Content
 			$this->assertTrue($this->validJSON($response->getBody()),"Successful blacklist retrieval does not return valid JSON in the response body.");
@@ -288,7 +287,7 @@
 			$newIPs = array("125.252.133.3","129.162.15.116","3.8.237.84");
 			
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>$newIPs)));
@@ -311,7 +310,7 @@
 			
 			//Test that modifications were saved
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			
 			if($this->validJSON($response->getBody())){
@@ -326,26 +325,27 @@
 		
 		function testBlacklistManipulationHandlesUnsupportedRequests(){
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			
 			
 			/**** Test unsupported methods ****/
+			$this->request->setBody(json_encode(array("ips"=>array())));
 			$response = $this->request->post();
-			$this->assertEqual(405,$response->getStatusCode(),"/blacklist endpoint returns incorrect status code for unsupported method POST: {$response->getStatusCode()}");
-			$this->assertEqual("Method Not Allowed",$response->getReason(),"/blacklist endpoint returns incorrect reason for unsupported method POST: {$response->getReason()}");
-			$this->validateErrorMessage($response,"/blacklist does not support the POST method.","Making an unsupported POST request to the /blacklist endpoint returns an invalid message");
+			$this->assertEqual(405,$response->getStatusCode(),"/apis/14358019264956/blacklist endpoint returns incorrect status code for unsupported method POST: {$response->getStatusCode()}");
+			$this->assertEqual("Method Not Allowed",$response->getReason(),"/apis/14358019264956/blacklist endpoint returns incorrect reason for unsupported method POST: {$response->getReason()}");
+			$this->validateErrorMessage($response,"/apis/14358019264956/blacklist does not support the POST method.","Making an unsupported POST request to the /blacklist endpoint returns an invalid message");
 			
 			$response = $this->request->delete();
-			$this->assertEqual(405,$response->getStatusCode(),"/blacklist endpoint returns incorrect status code for unsupported method DELETE: {$response->getStatusCode()}");
-			$this->assertEqual("Method Not Allowed",$response->getReason(),"/blacklist endpoint returns incorrect reason for unsupported method DELETE: {$response->getReason()}");
-			$this->validateErrorMessage($response,"/blacklist does not support the DELETE method.","Making an unsupported DELETE request to the /blacklist endpoint returns an invalid message");
+			$this->assertEqual(405,$response->getStatusCode(),"/apis/14358019264956/blacklist endpoint returns incorrect status code for unsupported method DELETE: {$response->getStatusCode()}");
+			$this->assertEqual("Method Not Allowed",$response->getReason(),"/apis/14358019264956/blacklist endpoint returns incorrect reason for unsupported method DELETE: {$response->getReason()}");
+			$this->validateErrorMessage($response,"/apis/14358019264956/blacklist does not support the DELETE method.","Making an unsupported DELETE request to the /blacklist endpoint returns an invalid message");
 		}
 		
 		function testBlacklistManipulationHandlesMissingOrInvalidArguments(){
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			
@@ -353,31 +353,31 @@
 			/**** Test Non-JSON Request Body ****/
 			$this->request->setBody("Invalid JSON");
 			$response = $this->request->put();
-			$this->assertEqual(400,$response->getStatusCode(),"/blacklist endpoint returns incorrect status code for invalid JSON request body: {$response->getStatusCode()}");
-			$this->assertEqual("Bad Request",$response->getReason(),"/blacklist endpoint returns incorrect reason for invalid JSON request body: {$response->getReason()}");
-			$this->validateErrorMessage($response,"Request arguments most be supplied using valid JSON.","PUTing to the /blacklist endpoint with a non-JSON body returns an invalid message");
+			$this->assertEqual(400,$response->getStatusCode(),"/apis/14358019264956/blacklist endpoint returns incorrect status code for invalid JSON request body: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"/apis/14358019264956/blacklist endpoint returns incorrect reason for invalid JSON request body: {$response->getReason()}");
+			$this->validateErrorMessage($response,"Request arguments must be supplied using valid JSON.","PUTing to the /blacklist endpoint with a non-JSON body returns an invalid message");
 			
 			
 			/**** Test Missing Required Arguments ****/
 			$this->request->setBody(json_encode(array()));
 			$response = $this->request->put();
-			$this->assertEqual(400,$response->getStatusCode(),"/blacklist endpoint returns incorrect status code for missing required arguments: {$response->getStatusCode()}");
-			$this->assertEqual("Bad Request",$response->getReason(),"/blacklist endpoint returns incorrect reason for missing required arguments: {$response->getReason()}");
+			$this->assertEqual(400,$response->getStatusCode(),"/apis/14358019264956/blacklist endpoint returns incorrect status code for missing required arguments: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"/apis/14358019264956/blacklist endpoint returns incorrect reason for missing required arguments: {$response->getReason()}");
 			$this->validateErrorMessage($response,"The following arguments are required, but have not been supplied: ips.","Failing to supply required arguments to the /blacklist endpoint returns an invalid message");
 			
 			
 			/**** Test Invalid Arguments ****/
 			$this->request->setBody(json_encode(array("ips"=>array("232323.2402.2402.12"))));
 			$response = $this->request->put();
-			$this->assertEqual(400,$response->getStatusCode(),"/blacklist endpoint returns incorrect status code for invalid arguments: {$response->getStatusCode()}");
-			$this->assertEqual("Bad Request",$response->getReason(),"/blacklist endpoint returns incorrect reason for invalid arguments: {$response->getReason()}");
+			$this->assertEqual(400,$response->getStatusCode(),"/apis/14358019264956/blacklist endpoint returns incorrect status code for invalid arguments: {$response->getStatusCode()}");
+			$this->assertEqual("Bad Request",$response->getReason(),"/apis/14358019264956/blacklist endpoint returns incorrect reason for invalid arguments: {$response->getReason()}");
 			$this->validateErrorMessage($response,"The following arguments have invalid values: ips.","Supplying invalid argument values to the /blacklist endpoint returns an invalid message");
 						
 						
 			/**** Test duplicate URIs  in organisation list ****/
 			$newIPs = array("ips"=>array("232.123.69.42","232.123.69.42"));
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode($newIPs));
@@ -390,7 +390,7 @@
 		
 		function testBlacklistManipulationHandlesUnauthorisedRequests(){
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			
@@ -399,7 +399,7 @@
 			$this->request->takeFromHeaders("Authorization");
 			$response = $this->request->get();
 			$this->assertEqual(401,$response->getStatusCode(),"Unauthorised request to /blacklist endpoint returns incorrect status code: {$response->getStatusCode()}");
-			$this->assertEqual("Unauthorized",$response->getReason(),"Unauthorised request to /blacklist endpoint returns incorrect reason: {$response->getReason()}");
+			$this->assertEqual("Authorization Required",$response->getReason(),"Unauthorised request to /blacklist endpoint returns incorrect reason: {$response->getReason()}");
 			$this->assertEqual("Basic",$response->viewFromHeaders("WWW-Authenticate"),"Unauthorised request to /blacklists/{blacklist_slug}/ip endpoint does not return correct WWW-Authenticate header: {$response->viewFromHeaders('WWW-Authenticate')}");
 			$this->validateErrorMessage($response,"Please use Basic Authentication to authorise this request.","Sending an unauthorised request to the /blacklist endpoint returns an invalid message");
 			
@@ -415,7 +415,7 @@
 		function testBlacklistManipulationNegotiatesContent(){
 			/**** Test that correct content types are returned by default ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			
 			$this->assertEqual("application/json;charset=utf-8",$response->viewFromHeaders("Content-Type"),"A successful blacklist retrieval request did not return the correct content representation or charset by default.");
@@ -424,7 +424,7 @@
 			
 			/**** Test that supported content types return the correct representation ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$this->request->addPreferedContentType("application/json");
 			$this->request->addPreferedCharset("UTF-8");
 			$this->request->addPreferedLanguage("en");
@@ -438,7 +438,7 @@
 			
 			/**** Test that unsupported content types return an error ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$this->request->addPreferedContentType("text/html");
 			$this->request->addPreferedCharset("UTF-8");
 			$this->request->addPreferedLanguage("fr");
@@ -451,7 +451,7 @@
 		
 		function testBlacklistManipulationConcurrencyChecks(){
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$validResponse = $this->request->get();
 			
 			
@@ -465,7 +465,7 @@
 			
 			/**** Test manipulating a resource with invalid concurrency tags ****/
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>array("5.154.167.63","16.121.217.65"))));
@@ -482,7 +482,7 @@
 			$ips = array("241.107.72.174","205.63.67.58","181.101.104.69","116.229.51.252","232.131.248.249","127.0.0.1");
 			
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>$ips)));
@@ -495,7 +495,7 @@
 			$sample = array_unique(array($ips[rand(0,sizeof($ips)-2)],$ips[rand(0,sizeof($ips)-2)],$ips[rand(0,sizeof($ips)-2)]));
 			
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>$sample)));
@@ -505,7 +505,7 @@
 			$this->assertEqual($sample,$responseBody["ips"],"Adding IPs to the /blacklist endpoint, does not work if they are already in the whitelist.");
 			
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$responseBody = json_decode($this->request->get()->getBody(),true);
 			$this->assertEqual(array_diff($ips,$sample),$responseBody["ips"],"Adding IPs to the /blacklist endpoint does not remove them from the whitelist.");
 			
@@ -514,7 +514,7 @@
 			$whitelist = array_merge(array_diff($ips,$sample),array($ip));
 			
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>$whitelist)));
@@ -524,7 +524,7 @@
 			$this->assertEqual($whitelist,$responseBody["ips"],"Adding IPs to the /whitelist endpoint, does not work if they are already in the blacklist.");
 			
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$responseBody = json_decode($this->request->get()->getBody(),true);
 			$this->assertEqual(array_diff($sample,$whitelist),$responseBody["ips"],"Adding IPs to the /whitelist endpoint does not remove them from the blacklist.");
 		}
@@ -532,7 +532,7 @@
 		function testWhitelistRestrictsAccessCorrectly(){
 			//Add own IP to whitelist
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/whitelist");
+			$this->request->setEndpoint("/apis/14358019264956/whitelist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>array("127.0.0.1"))));
@@ -546,7 +546,7 @@
 		function testBlacklistRestrictsAccessCorrectly(){
 			//Add another IP to blacklist
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>array("57.72.82.164"))));
@@ -558,7 +558,7 @@
 			
 			//Add own IP to blacklist
 			$this->initialiseRequest();
-			$this->request->setEndpoint("/blacklist");
+			$this->request->setEndpoint("/apis/14358019264956/blacklist");
 			$response = $this->request->get();
 			$this->request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
 			$this->request->setBody(json_encode(array("ips"=>array("127.0.0.1"))));

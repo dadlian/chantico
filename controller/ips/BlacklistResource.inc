@@ -3,6 +3,7 @@
 		protected function get(){
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			$blacklist = $api->getBlacklist();
+			
 			$payload = $this->assemblePayload($blacklist->getEntries());
 			
 			ResponseHandler::retrieved($payload,$payload["self"],$blacklist->getModified(),$blacklist->getETag());

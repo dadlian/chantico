@@ -124,6 +124,9 @@
 				$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
 				$sqlGateway->delete($apiToken);
 				
+				//Delete Renewals associated with user
+				$sqlGateway->delete($user->getRenewals());
+				
 				ResponseHandler::deleted("User: /".RequestHandler::getRequestURI().", has been removed.");
 			}else{
 				ResponseHandler::error("User: /".RequestHandler::getRequestURI().", cannot be removed.");

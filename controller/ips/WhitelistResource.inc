@@ -3,7 +3,8 @@
 		protected function get(){
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			$whitelist = $api->getWhitelist();
-			$payload = $this->assemblePayload($api->getWhitelist()->getEntries());
+			
+			$payload = $this->assemblePayload($whitelist->getEntries());
 			
 			ResponseHandler::retrieved($payload,$payload["self"],$whitelist->getModified(),$whitelist->getETag());
 		}

@@ -24,6 +24,9 @@
 		/** @Collection(type=@String) */
 		protected $options;
 		
+		/** @Collection(type=@Object(class='Renewal')) */
+		protected $renewals;
+		
 		protected function getURI(){
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
@@ -45,6 +48,10 @@
 			$eTag .= $this->getRefreshSecret();
 			$eTag .= $this->getAccessEndpoint();
 			$eTag .= $this->getExpires();
+			
+			foreach($this->getOptions() as $option){
+				$eTag .= $option;
+			}
 		
 			return md5($this->getModified().$eTag);
 		}

@@ -26,18 +26,17 @@
 		}
 		
 		protected function getRecordCount(){
-			$renewals = DatabaseAdministrator::execute("SELECT COUNT(id) as renewals FROM Renewal");
-			return $renewals[0]["renewals"];
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			return sizeof($user->getRenewals());
 		}
 		
 		protected function buildPageEntries($start,$count){
-			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
-			$sorter = new Sorter();
-			$sorter->addCriterion("created",Criterion::DESCENDING);
-			
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			$payload = array();
-			foreach($sqlGateway->find("Renewal",$searcher,$sorter,$count,$start) as $renewal){
+			
+			foreach(array_slice($user->getRenewals(),($start-1)*$count,$count) as $renewal){
 				$payload[] = $this->assemblePayload($renewal);
 			}
 			
@@ -109,14 +108,13 @@
 				$user->setAccessSecret($this->encrypt($accessSecret,$password));
 				$user->setRefreshSecret($this->encrypt($refreshSecret,$password));
 				$user->setExpires(time()+$lifetime);
-				
-				$sqlGateway->save($user);
 			}else{
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 			
 			//Register this renewal event
-			$sqlGateway->save(new Renewal($user->getModified()));
+			$user->appendToRenewals(new Renewal($user->getModified()));
+			$sqlGateway->save($user);
 			
 			//Update the renewal stub
 			$warrant = Magistrate::issueWarrant("renew");
