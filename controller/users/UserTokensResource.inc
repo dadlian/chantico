@@ -86,7 +86,7 @@
 				"self"=>$this->getBase()."/".RequestHandler::getRequestURI(),
 				"key"=>$this->decrypt($user->getAccessKey(),$password),
 				"secret"=>$this->decrypt($user->getAccessSecret(),$password),
-				"expiry"=>$user->getExpires(),
+				"expiry"=>$user->getExpires()-time(),
 				"renew"=>$user->getURI()."/renewals?warrant=$warrant"
 			);
 			

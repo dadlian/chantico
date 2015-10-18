@@ -113,6 +113,7 @@
 				<administrator>
 					<permissions>
 						<permission1>read</permission1>
+						<permission2>write</permission2>
 					</permissions>
 				</administrator>
 				<refresher>

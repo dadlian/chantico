@@ -129,7 +129,7 @@
 			$payload = array(
 				"key"=>$accessKey,
 				"secret"=>$accessSecret,
-				"expiry"=>$user->getExpires(),
+				"expiry"=>$user->getExpires() - time(),
 				"renew"=>$user->getURI()."/renewals?warrant=$warrant"
 			);
 			
