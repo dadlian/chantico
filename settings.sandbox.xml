@@ -44,14 +44,14 @@
 			<name>api</name>
 			<values>
 				<formats>application/json</formats>
-				<languages>en</languages>
+				<languages>en,en-au,en-bz,en-ca,en-ie,en-jm,en-nz,en-ph,en-za,en-tt,en-gb,en-us,en-zw</languages>
 				<charsets>utf-8</charsets>
 			</values>
 		</settings>
 		<settings>
 			<name>options</name>
 			<values>
-				<lifetime>3600</lifetime>
+				<lifetime>0</lifetime>
 				<salt>T5WshJwpA5Ee97udYrpgv9</salt>
 			</values>
 		</settings>
