@@ -129,5 +129,60 @@
 			<requirements>
 			</requirements>
 		</endpoint>
+		<endpoint>
+			<name>Password Resets Collection</name>
+			<path>apis/@/users/@/resets</path>
+			<controller>PasswordResetCollection</controller>
+			<roles>
+				<administrator>
+					<permissions>
+						<permission1>read</permission1>
+						<permission2>write</permission2>
+					</permissions>
+				</administrator>
+				<resetter>
+					<permissions>
+						<permission1>read</permission1>
+						<permission2>write</permission2>
+					</permissions>
+				</resetter>
+			</roles>
+			<parameters>
+				<param1>api</param1>
+				<param2>user</param2>
+			</parameters>
+			<requirements>
+				<req1>email</req1>
+				<req2>recipient</req2>
+			</requirements>
+		</endpoint>
+		<endpoint>
+			<name>Password Reset Resource</name>
+			<path>apis/@/users/@/resets/@</path>
+			<controller>PasswordResetResource</controller>
+			<roles>
+				<administrator>
+					<permissions>
+						<permission1>read</permission1>
+						<permission2>write</permission2>
+					</permissions>
+				</administrator>
+				<resetter>
+					<permissions>
+						<permission1>read</permission1>
+						<permission2>write</permission2>
+					</permissions>
+				</resetter>
+			</roles>
+			<parameters>
+				<param1>api</param1>
+				<param2>user</param2>
+				<param3>reset</param3>
+			</parameters>
+			<requirements>
+				<req1>code</req1>
+				<req2>authentication</req2>
+			</requirements>
+		</endpoint>
 	</endpointlist>
 </mapping>

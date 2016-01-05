@@ -1,6 +1,6 @@
 <?php
 	class UserResource extends UserController{
-		protected function get(){
+		protected function get(){		
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 			$payload = $this->assemblePayload($user);
 			ResponseHandler::retrieved($payload,$user->getURI(),$user->getModified(),$user->getETag());
@@ -27,7 +27,7 @@
 			$authentication = $this->getFromContent("authentication");
 			$user->setUsername($this->getFromContent("username"));
 			if($authentication){
-				//Delete Old Access Tokens				
+				//Delete Old Access Tokens
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 				$request->setEndpoint($user->getAccessEndpoint());
 				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
