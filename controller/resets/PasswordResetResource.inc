@@ -38,22 +38,21 @@
 			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");
 			$response = $request->get();
-			$body = json_decode($response->getBody(),true);
-			$role = $body["role"];
-			
-			//Delete Old Access Tokens
-			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			$request->setEndpoint($user->getAccessEndpoint());
-			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-			$request->setContentType("application/json");
-			$request->assureConsistency($response->viewFromHeaders("Last-Modified"),$response->viewFromHeaders("ETag"));
-			$response = $request->delete();
+			$responseBody = json_decode($response->getBody(),true);
+			$role = $responseBody["role"];
+			$options = array();
+			foreach($responseBody as $option => $value){
+				if(!in_array($option,array("self","tokens","active-token","role"))){
+					$options[$option] = $value;
+				}
+			}
 			
 			//Create Fresh Access Tokens
+			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
 			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");
-			$payload = json_encode(array_merge(array("role"=>$role),$user->getOptions()));
+			$payload = json_encode(array_merge(array("role"=>$role),$options));
 			$request->setBody($payload);
 			$response = $request->post();
 			$body = json_decode($response->getBody(),true);
