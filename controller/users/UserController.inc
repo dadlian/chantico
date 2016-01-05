@@ -171,7 +171,8 @@
 				"username"=>$user->getUsername(),
 				"role"=>$role,
 				"tokens"=>"$userURI/tokens",
-				"options"=>$options
+				"options"=>$options,
+				"resets"=>"$userURI/resets"
 			);
 			
 			return $payload;
