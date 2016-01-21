@@ -2,9 +2,10 @@
 	class UserCollection extends UserController{
 		protected function post(){
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			$normalisedUsername = strtolower($this->getFromContent("username"));
 			foreach($api->getUsers() as $user){
-				if($user->getUsername() == $this->getFromContent("username")){
-					ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
+				if($user->getUsername() == $normalisedUsername){
+					ResponseHandler::conflict("A user identified by '$normalisedUsername' already exists.");
 				}
 			}
 			
@@ -47,7 +48,7 @@
 			
 			//Save User to Chantico
 			$user = new ManagedAccess();
-			$user->setUsername($this->getFromContent("username"));
+			$user->setUsername($normalisedUsername);
 			$user->setAuthentication(md5($this->getFromContent("authentication")));
 			$user->setAccessKey($this->encrypt($accessKey,$this->getFromContent("authentication")));
 			$user->setAccessSecret($this->encrypt($accessSecret,$this->getFromContent("authentication")));

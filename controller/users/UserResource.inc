@@ -9,10 +9,11 @@
 		protected function put(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			$normalisedUsername = strtolower($this->getFromContent("username"));
 			
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
-			$searcher->addCriterion("username",Criterion::EQUAL,$this->getFromContent("username"));
+			$searcher->addCriterion("username",Criterion::EQUAL,$normalisedUsername);
 			$searcher->addCriterion("id",Criterion::NOT_EQUAL,$user->getId());
 			if($sqlGateway->findUnique("ManagedAccess",$searcher)){
 				ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
@@ -25,7 +26,7 @@
 			
 			//Save user changes to Chantico
 			$authentication = $this->getFromContent("authentication");
-			$user->setUsername($this->getFromContent("username"));
+			$user->setUsername($normalisedUsername);
 			if($authentication){
 				//Delete Old Access Tokens
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));

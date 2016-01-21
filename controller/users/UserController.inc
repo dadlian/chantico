@@ -8,7 +8,7 @@
 				$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 				$authorisation = RequestHandler::getAuthorisation();
 				
-				if($user && !($user->getUsername() == $authorisation["key"] && $user->getAuthentication() == md5($authorisation["secret"]))){
+				if($user && !($user->getUsername() == strtolower($authorisation["key"]) && $user->getAuthentication() == md5($authorisation["secret"]))){
 					ResponseHandler::forbidden("The provided tokens do not have permission to perform this action.");
 				}
 			}
@@ -78,6 +78,7 @@
 				if($usernames){
 					$patterns = array();
 					foreach(explode(",",$usernames) as $username){
+						$username = strtolower($username);
 						$patterns[] = "username LIKE '$username'";
 					}
 					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck AND (".implode(" OR ",$patterns).")");
@@ -112,6 +113,7 @@
 			if($usernames){
 				$patterns = array();
 				foreach(explode(",",$usernames) as $username){
+					$username = strtolower($username);
 					$patterns[] = "username LIKE '$username'";
 				}
 				
