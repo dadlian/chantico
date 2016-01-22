@@ -8,3 +8,4 @@ doc
 test
 *api-doc.odt*
 settings.*.xml
+wadadli.php
