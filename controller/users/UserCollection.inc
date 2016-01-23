@@ -3,10 +3,13 @@
 		protected function post(){
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			$normalisedUsername = strtolower($this->getFromContent("username"));
-			foreach($api->getUsers() as $user){
-				if($user->getUsername() == $normalisedUsername){
-					ResponseHandler::conflict("A user identified by '$normalisedUsername' already exists.");
-				}
+			
+			$sqlGateway = new SQLGateway();
+			$searcher = new Searcher();
+			$searcher->addCriterion("username",Criterion::EQUAL,$normalisedUsername);
+			$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
+			if($sqlGateway->findUnique("ManagedAccess",$searcher)){
+				ResponseHandler::conflict("A user identified by '$normalisedUsername' already exists.");
 			}
 			
 			//Create New Access
@@ -56,10 +59,7 @@
 			$user->setAccessEndpoint($accessEndpoint,$this->getFromContent("authentication"));
 			$user->setExpires(time()+$lifetime);
 			$user->setOptions($this->getFromContent("options",array()));
-			
-			$sqlGateway = new SQLGateway();
-			$api->appendToUsers($user);
-			$sqlGateway->save($api);
+			$user->setApi($api->getId());
 			
 			//Create APIToken for User to Access its tokens
 			$sqlGateway->save(new APIToken("user",0,md5($user->getUsername()),$user->getAuthentication(),$user->getAuthentication()));

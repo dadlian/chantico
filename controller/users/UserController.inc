@@ -1,7 +1,16 @@
 <?php
 	abstract class UserController extends ChanticoController{
 		public function execute(){
-			$sqlGateway = new SQLGateway();
+			/*$sqlGateway = new SQLGateway();
+			foreach($sqlGateway->find("API") as $api){
+				foreach($api->getUsers() as $user){
+					$user->setApi($api->getId());
+					$sqlGateway->save($user);
+				}
+			}
+			Janitor::cleanup();
+			exit;*/
+			
 			$searcher = new Searcher();
 			
 			if(RequestHandler::getAuthenticatedToken()->getRole() == "user"){
