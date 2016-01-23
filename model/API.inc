@@ -9,9 +9,6 @@
 		/** @String */
 		protected $accessSecret;
 		
-		/** @Collection(type=@Object(class='ManagedAccess')) */
-		protected $users;
-		
 		/** @Object(class='IPList') */
 		protected $whitelist;
 		
@@ -28,9 +25,6 @@
 		
 		protected function getETag(){
 			$eTag = $this->getRoot();
-			foreach($this->getUsers() as $user){
-				$eTag.=$user->getETag();
-			}
 			foreach($this->getWhitelist() as $ip){
 				$eTag.=$ip->getETag();
 			}

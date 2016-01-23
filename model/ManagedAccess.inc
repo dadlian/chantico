@@ -27,13 +27,11 @@
 		/** @Collection(type=@Object(class='Renewal')) */
 		protected $renewals;
 		
+		/** @String */
+		protected $api;
+		
 		protected function getURI(){
-			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
-			$searcher->addCriterion("users",Criterion::INCLUDES,$this->getId());
-			$api = $sqlGateway->findUnique("API",$searcher);
-			
-			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{$api->getId()}/users/{$this->getId()}";
+			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{$this->getApi()}/users/{$this->getId()}";
 		}
 		
 		protected function getURITemplate(){
@@ -48,6 +46,7 @@
 			$eTag .= $this->getRefreshSecret();
 			$eTag .= $this->getAccessEndpoint();
 			$eTag .= $this->getExpires();
+			$eTag .= $this->getApi();
 			
 			foreach($this->getOptions() as $option){
 				$eTag .= $option;
