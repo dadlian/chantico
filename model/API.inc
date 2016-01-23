@@ -15,6 +15,9 @@
 		/** @Object(class='IPList') */
 		protected $blacklist;
 		
+		/** @Collection(type=@Object(class='ManagedAccess')) */
+		protected $users;
+		
 		protected function getURI(){
 			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{$this->getId()}";
 		}

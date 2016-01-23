@@ -23,7 +23,7 @@
 				$sqlGateway = new SQLGateway();
 				$searcher = new Searcher();
 				$searcher->addCriterion($field,Criterion::EQUAL,$value);
-				$searcher->addCriterion("API",$api->getId(),"users");
+				$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
 				
 				$user = $sqlGateway->findUnique($class,$searcher);
 				if(!$user && !CryptKeeper::exhume($value,$field)){

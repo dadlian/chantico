@@ -1,18 +1,6 @@
 <?php
 	abstract class UserController extends ChanticoController{
-		public function execute(){
-			/*$sqlGateway = new SQLGateway();
-			foreach($sqlGateway->find("API") as $api){
-				foreach($api->getUsers() as $user){
-					$user->setApi($api->getId());
-					$sqlGateway->save($user);
-				}
-			}
-			Janitor::cleanup();
-			exit;*/
-			
-			$searcher = new Searcher();
-			
+		public function execute(){			
 			if(RequestHandler::getAuthenticatedToken()->getRole() == "user"){
 				$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 				$authorisation = RequestHandler::getAuthorisation();
@@ -83,7 +71,7 @@
 				$access = RequestHandler::getQueryParameter("access");
 				
 				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-				$apiCheck = "id IN (SELECT value FROM APIUsers WHERE api = '{$api->getId()}')";
+				$apiCheck = "api = {$api->getId()}";
 				if($usernames){
 					$patterns = array();
 					foreach(explode(",",$usernames) as $username){
@@ -118,7 +106,7 @@
 			$access = RequestHandler::getQueryParameter("access");
 			
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-			$apiCheck = "id IN (SELECT value FROM APIUsers WHERE api = '{$api->getId()}')";
+			$apiCheck = "api = {$api->getId()}";
 			if($usernames){
 				$patterns = array();
 				foreach(explode(",",$usernames) as $username){
@@ -147,7 +135,7 @@
 				$searcher->addCriterion("accessEndpoint",Criterion::EQUAL,$access);
 			}
 			
-			$searcher->addCriterion("API",$api->getId(),"users");
+			$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
 			foreach($sqlGateway->find("ManagedAccess",$searcher,new Sorter(),$count,$start) as $user){
 				$payload[] = $this->assemblePayload($user);
 			}

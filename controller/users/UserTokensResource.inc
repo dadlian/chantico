@@ -16,6 +16,7 @@
 		protected function get(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			
 			$sqlGateway = new SQLGateway();
 			$authentication = RequestHandler::getAuthorisation();
 			$username = $authentication["key"];

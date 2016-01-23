@@ -60,6 +60,7 @@
 			$user->setExpires(time()+$lifetime);
 			$user->setOptions($this->getFromContent("options",array()));
 			$user->setApi($api->getId());
+			$sqlGateway->save($user);
 			
 			//Create APIToken for User to Access its tokens
 			$sqlGateway->save(new APIToken("user",0,md5($user->getUsername()),$user->getAuthentication(),$user->getAuthentication()));
