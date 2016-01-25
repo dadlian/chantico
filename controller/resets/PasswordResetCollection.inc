@@ -6,6 +6,7 @@
 			
 			//Close any open reset requests
 			$searcher->addCriterion("status",Criterion::EQUAL,"requested");
+			$searcher->addCriterion("user",Criterion::EQUAL,$this->viewFromArguments("user"));
 			$openResets = array();
 			foreach($sqlGateway->find("PasswordReset",$searcher) as $openReset){
 				$openReset->setStatus("cancelled");

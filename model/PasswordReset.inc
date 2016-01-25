@@ -12,11 +12,10 @@
 		protected function getURI(){
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
-			$searcher->addCriterion("users",Criterion::INCLUDES,$this->getUser());
-			$api = $sqlGateway->findUnique("API",$searcher);
+			$searcher->addCriterion("id",Criterion::EQUAL,$this->getUser());
+			$user = $sqlGateway->findUnique("ManagedAccess",$searcher);
 			
-			
-			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{$api->getId()}/users/{$this->getUser()}/resets/{$this->getId()}";
+			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{$user->getApi()}/users/{$this->getUser()}/resets/{$this->getId()}";
 		}
 		
 		protected function getURITemplate(){
