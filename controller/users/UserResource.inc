@@ -50,6 +50,16 @@
 				}else if($response->getStatusCode() != 201){
 					ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 				}
+			
+				$options = array();
+				if($response->getStatusCode() == 201){
+					$responseBody = json_decode($response->getBody(),true);
+					foreach($responseBody as $option => $value){
+						if(!in_array($option,array("self","tokens","active-token","role"))){
+							$options[$option] = $value;
+						}
+					}
+				}
 				
 				$accessEndpoint = parse_url($body["self"],PHP_URL_PATH);
 				$tokensEndpoint = parse_url($body["tokens"],PHP_URL_PATH);
@@ -78,6 +88,7 @@
 				$user->setRefreshSecret($this->encrypt($refreshSecret,$authentication));
 				$user->setAccessEndpoint($accessEndpoint);
 				$user->setExpires(time()+$lifetime);
+				$user->setOptions($this->getFromContent("options",$options));
 			}else{
 				//Update Access
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));

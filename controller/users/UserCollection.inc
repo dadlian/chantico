@@ -28,6 +28,17 @@
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 			
+			$options = array();
+			if($response->getStatusCode() == 201){
+				$responseBody = json_decode($response->getBody(),true);
+				//var_dump($responseBody); exit;
+				foreach($responseBody as $option => $value){
+					if(!in_array($option,array("self","tokens","active-token","role"))){
+						$options[$option] = $value;
+					}
+				}
+			}
+			
 			$accessEndpoint = parse_url($body["self"],PHP_URL_PATH);
 			$tokensEndpoint = parse_url($body["tokens"],PHP_URL_PATH);
 			$accessKey = $body["active-token"]["key"];
@@ -58,7 +69,7 @@
 			$user->setRefreshSecret($this->encrypt($refreshSecret,$this->getFromContent("authentication")));
 			$user->setAccessEndpoint($accessEndpoint,$this->getFromContent("authentication"));
 			$user->setExpires(time()+$lifetime);
-			$user->setOptions($this->getFromContent("options",array()));
+			$user->setOptions($this->getFromContent("options",$options));
 			$user->setApi($api->getId());
 			$sqlGateway->save($user);
 			

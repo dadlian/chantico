@@ -145,23 +145,28 @@
 		
 		protected function assemblePayload($user){
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+
+			//Load User Options from API
+			if(!$user->getOptions()){
+				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
+				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
+				$request->setEndpoint($user->getAccessEndpoint());
+				$response = $request->get();
 			
-			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-			$request->setEndpoint($user->getAccessEndpoint());
-			$response = $request->get();
-			
-			if($response->getStatusCode() == "200"){
-				$responseBody = json_decode($response->getBody(),true);
-				$role = $responseBody["role"];
 				$options = array();
-				foreach($responseBody as $option => $value){
-					if(!in_array($option,array("self","tokens","active-token","role"))){
-						$options[$option] = $value;
+				if($response->getStatusCode() == "200"){
+					$responseBody = json_decode($response->getBody(),true);
+					$role = $responseBody["role"];
+					foreach($responseBody as $option => $value){
+						if(!in_array($option,array("self","tokens","active-token","role"))){
+							$options[$option] = $value;
+						}
 					}
 				}
-			}else{
-				return array();
+				
+				$user->setOptions($options);
+				$sqlGateway = new SQLGateway();
+				$sqlGateway->save($user);
 			}
 			
 			$userURI = preg_replace("/\{api_id\}/",$api->getId(),$user->getURI());
@@ -170,8 +175,9 @@
 				"username"=>$user->getUsername(),
 				"role"=>$role,
 				"tokens"=>"$userURI/tokens",
-				"options"=>$options,
-				"resets"=>"$userURI/resets"
+				"options"=>$user->getOptions(),
+				"resets"=>"$userURI/resets",
+				"recoveries"=>"$userURI/recoveries"
 			);
 			
 			return $payload;
