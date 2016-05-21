@@ -147,7 +147,7 @@
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 
 			//Load User Options from API
-			if(!$user->getOptions()){
+			if(!array_compress($user->getOptions())){
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setEndpoint($user->getAccessEndpoint());
