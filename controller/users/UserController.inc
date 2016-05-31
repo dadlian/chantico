@@ -164,9 +164,8 @@
 				$options = array();
 				if($response->getStatusCode() == "200"){
 					$responseBody = json_decode($response->getBody(),true);
-					$role = $responseBody["role"];
 					foreach($responseBody as $option => $value){
-						if(!in_array($option,array("self","tokens","active-token","role"))){
+						if(!in_array($option,array("self","tokens","active-token"))){
 							$options[$option] = $value;
 						}
 					}
@@ -177,13 +176,16 @@
 				$sqlGateway->save($user);
 			}
 			
+			$options = $user->getOptions();
+			unset($options["role"]);
+			
 			$userURI = preg_replace("/\{api_id\}/",$api->getId(),$user->getURI());
 			$payload = array(
 				"self"=>$userURI,
 				"username"=>$user->getUsername(),
-				"role"=>$role,
+				"role"=>$user->viewFromOptions("role"),
 				"tokens"=>"$userURI/tokens",
-				"options"=>$user->getOptions(),
+				"options"=>$options,
 				"resets"=>"$userURI/resets",
 				"recoveries"=>"$userURI/recoveries"
 			);
