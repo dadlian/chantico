@@ -51,7 +51,7 @@
 			}
 			
 			$options = RequestHandler::getQueryParameter("options");
-			if($options && !preg_match("/^\w+~[\w:\/\-\.]+$/",$options)){
+			if($options && !preg_match("/^\w+~[\w:\/\-\.]+(,\w+~[\w:\/\-\.]+)*$/",$options)){
 				$invalidQueryParameters[] = "options";
 			}
 			
@@ -80,9 +80,15 @@
 					}
 					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck AND (".implode(" OR ",$patterns).")");
 				}else if($options){
-					$parameters = preg_split("/~/",$options);
-					$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
-							"WHERE name = '{$parameters[0]}' AND value = '{$parameters[1]}' AND A.$apiCheck";
+					$optionsList = explode(",",$options);
+					$optionsQueryParts = array();
+					foreach($optionsList as $option){
+						$parameters = preg_split("/~/",$option);
+						$optionsQueryParts[] = "(name = '{$parameters[0]}' AND value = '{$parameters[1]}')";
+					}
+					
+					$optionsQuery = implode(" OR ",$optionsQueryParts);
+					$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess WHERE ($optionsQuery) AND A.$apiCheck";
 					$countResult = DatabaseAdministrator::execute($query);
 				}else if($access){
 					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE accessEndpoint = '$access' AND $apiCheck");
@@ -122,9 +128,16 @@
 				
 				$searcher->addCriterion("id",Criterion::EQUAL,$users);
 			}else if($options){
-				$parameters = preg_split("/~/",$options);
-				$results = DatabaseAdministrator::execute("SELECT A.id FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess ".
-										"WHERE A.$apiCheck AND name = '{$parameters[0]}' AND value = '{$parameters[1]}'");
+				$optionsList = explode(",",$options);
+				$optionsQueryParts = array();
+				foreach($optionsList as $option){
+					$parameters = preg_split("/~/",$option);
+					$optionsQueryParts[] = "(name = '{$parameters[0]}' AND value = '{$parameters[1]}')";
+				}
+				
+				$optionsQuery = implode(" OR ",$optionsQueryParts);
+				$results = DatabaseAdministrator::execute("SELECT A.id as id FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess WHERE ($optionsQuery) AND A.$apiCheck");
+				
 				$users = array();
 				foreach($results as $user){
 					$users[] = $user["id"];
