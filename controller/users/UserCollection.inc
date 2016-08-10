@@ -69,7 +69,13 @@
 			$user->setRefreshSecret($this->encrypt($refreshSecret,$this->getFromContent("authentication")));
 			$user->setAccessEndpoint($accessEndpoint,$this->getFromContent("authentication"));
 			$user->setExpires(time()+$lifetime);
-			$user->setOptions($this->getFromContent("options",$options));
+			
+			$optionsArray = $this->getFromContent("options",$options);
+			if(!array_key_exists("role",$optionsArray)){
+				$optionsArray["role"] = $this->getFromContent("role");
+			}
+			$user->setOptions($optionsArray);
+			
 			$user->setApi($api->getId());
 			$sqlGateway->save($user);
 			

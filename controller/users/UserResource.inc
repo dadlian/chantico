@@ -88,7 +88,6 @@
 				$user->setRefreshSecret($this->encrypt($refreshSecret,$authentication));
 				$user->setAccessEndpoint($accessEndpoint);
 				$user->setExpires(time()+$lifetime);
-				$user->setOptions($this->getFromContent("options",$options));
 			}else{
 				//Update Access
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
@@ -102,7 +101,12 @@
 				$body = json_decode($response->getBody(),true);
 			}
 			
-			$user->setOptions($this->getFromContent("options",array()));
+			$options = $options?$options:array();
+			$optionsArray = $this->getFromContent("options",$options);
+			if(!array_key_exists("role",$optionsArray)){
+				$optionsArray["role"] = $this->getFromContent("role");
+			}
+			$user->setOptions($optionsArray);
 			$sqlGateway->save($user);
 			
 			//Update APIToken for User to Access its

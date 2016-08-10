@@ -47,10 +47,6 @@
 			$eTag .= $this->getAccessEndpoint();
 			$eTag .= $this->getExpires();
 			$eTag .= $this->getApi();
-			
-			foreach($this->getOptions() as $option){
-				$eTag .= $option;
-			}
 		
 			return md5($this->getModified().$eTag);
 		}
