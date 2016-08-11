@@ -159,8 +159,15 @@
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 
 			//Load User Options from API
-			$optionsInitialised = sizeof($user->getOptions()) > 0;
-			foreach($user->getOptions() as $option){
+			$realOptions = array();
+			foreach($user->getOptions() as $option => $value){
+				if($option != "role"){
+					$realOptions[$option] = $value;
+				}
+			}
+			
+			$optionsInitialised = sizeof($realOptions) > 0;
+			foreach($realOptions as $option){
 				if(!$option){
 					$optionsInitialised = false;
 					break;
