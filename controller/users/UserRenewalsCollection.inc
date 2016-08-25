@@ -125,7 +125,7 @@
 			$stub->setUserPassword($this->encrypt($password,$stubToken));
 			$sqlGateway->save($stub);
 			
-			$uri = "http://".SettingsManager::getSetting("install","urlroot")."/".RequestHandler::getRequestURI();
+			$uri = ($_SERVER['HTTPS']?"https://":"http://").SettingsManager::getSetting("install","urlroot")."/".RequestHandler::getRequestURI();
 			$payload = array(
 				"key"=>$accessKey,
 				"secret"=>$accessSecret,

@@ -19,11 +19,11 @@
 		protected $users;
 		
 		protected function getURI(){
-			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{$this->getId()}";
+			return ($_SERVER['HTTPS']?"https://":"http://").SettingsManager::getSetting("install","urlroot")."/apis/{$this->getId()}";
 		}
 		
 		protected function getURITemplate(){
-			return "http://".SettingsManager::getSetting("install","urlroot")."/apis/{api_id}";
+			return ($_SERVER['HTTPS']?"https://":"http://").SettingsManager::getSetting("install","urlroot")."/apis/{api_id}";
 		}
 		
 		protected function getETag(){
