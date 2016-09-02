@@ -14,6 +14,8 @@
 			
 			//Create New Access
 			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
+			$request->setTransport("ssl");
+			$request->setPort(443);
 			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
 			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");
@@ -31,7 +33,6 @@
 			$options = array();
 			if($response->getStatusCode() == 201){
 				$responseBody = json_decode($response->getBody(),true);
-				//var_dump($responseBody); exit;
 				foreach($responseBody as $option => $value){
 					if(!in_array($option,array("self","tokens","active-token","role"))){
 						$options[$option] = $value;

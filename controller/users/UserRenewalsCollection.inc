@@ -71,6 +71,8 @@
 			
 			//Retrieve user access resource
 			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
+			$request->setTransport("ssl");
+			$request->setPort(443);
 			$request->setEndpoint($user->getAccessEndpoint());
 			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");
@@ -125,7 +127,7 @@
 			$stub->setUserPassword($this->encrypt($password,$stubToken));
 			$sqlGateway->save($stub);
 			
-			$uri = ($_SERVER['HTTPS']?"https://":"http://").SettingsManager::getSetting("install","urlroot")."/".RequestHandler::getRequestURI();
+			$uri = $this->getBase()."/".RequestHandler::getRequestURI();
 			$payload = array(
 				"key"=>$accessKey,
 				"secret"=>$accessSecret,

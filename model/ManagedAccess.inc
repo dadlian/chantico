@@ -31,11 +31,11 @@
 		protected $api;
 		
 		protected function getURI(){
-			return ($_SERVER['HTTPS']?"https://":"http://").SettingsManager::getSetting("install","urlroot")."/apis/{$this->getApi()}/users/{$this->getId()}";
+			return $this->getBaseUri()."/apis/{$this->getApi()}/users/{$this->getId()}";
 		}
 		
 		protected function getURITemplate(){
-			return ($_SERVER['HTTPS']?"https://":"http://").SettingsManager::getSetting("install","urlroot")."/apis/{api_id}/users/{user_id}";
+			return $this->getBaseUri()."/apis/{api_id}/users/{user_id}";
 		}
 		
 		protected function getETag(){

@@ -15,11 +15,11 @@
 			$searcher->addCriterion("id",Criterion::EQUAL,$this->getUser());
 			$user = $sqlGateway->findUnique("ManagedAccess",$searcher);
 			
-			return ($_SERVER['HTTPS']?"https://":"http://").SettingsManager::getSetting("install","urlroot")."/apis/{$user->getApi()}/users/{$this->getUser()}/resets/{$this->getId()}";
+			return $this->getBaseUri()."/apis/{$user->getApi()}/users/{$this->getUser()}/resets/{$this->getId()}";
 		}
 		
 		protected function getURITemplate(){
-			return ($_SERVER['HTTPS']?"https://":"http://").SettingsManager::getSetting("install","urlroot")."/apis/{api_id}/users/{user_id}/resets/{reset_id}";
+			return $this->getBaseUri()."/apis/{api_id}/users/{user_id}/resets/{reset_id}";
 		}
 		
 		protected function getETag(){
