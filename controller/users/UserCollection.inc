@@ -14,8 +14,11 @@
 			
 			//Create New Access
 			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			$request->setTransport("ssl");
-			$request->setPort(443);
+			if($api->isSecure()){
+				$request->setTransport("ssl");
+				$request->setPort(443);
+			}
+			
 			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
 			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");

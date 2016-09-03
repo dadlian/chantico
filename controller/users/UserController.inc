@@ -176,8 +176,11 @@
 			
 			if(!$optionsInitialised){
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-				$request->setTransport("ssl");
-				$request->setPort(443);
+				if($api->isSecure()){
+					$request->setTransport("ssl");
+					$request->setPort(443);
+				}
+			
 				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setEndpoint($user->getAccessEndpoint());
 				$response = $request->get();

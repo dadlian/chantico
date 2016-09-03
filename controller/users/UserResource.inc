@@ -30,8 +30,11 @@
 			if($authentication){
 				//Delete Old Access Tokens
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-				$request->setTransport("ssl");
-				$request->setPort(443);
+				if($api->isSecure()){
+					$request->setTransport("ssl");
+					$request->setPort(443);
+				}
+				
 				$request->setEndpoint($user->getAccessEndpoint());
 				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setContentType("application/json");
@@ -93,8 +96,11 @@
 			}else{
 				//Update Access
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-				$request->setTransport("ssl");
-				$request->setPort(443);
+				if($api->isSecure()){
+					$request->setTransport("ssl");
+					$request->setPort(443);
+				}
+			
 				$request->setEndpoint($user->getAccessEndpoint());
 				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setContentType("application/json");
@@ -128,8 +134,11 @@
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			
 			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			$request->setTransport("ssl");
-			$request->setPort(443);
+			if($api->isSecure()){
+				$request->setTransport("ssl");
+				$request->setPort(443);
+			}
+			
 			$request->setEndpoint($user->getAccessEndpoint());
 			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");

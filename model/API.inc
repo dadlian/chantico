@@ -18,6 +18,9 @@
 		/** @Collection(type=@Object(class='ManagedAccess')) */
 		protected $users;
 		
+		/** @Boolean */
+		protected $secure;
+		
 		protected function getURI(){
 			return $this->getBaseUri()."/apis/{$this->getId()}";
 		}

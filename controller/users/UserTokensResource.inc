@@ -24,8 +24,11 @@
 			
 			//Retrieve user access resource
 			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			$request->setTransport("ssl");
-			$request->setPort(443);
+			if($api->isSecure()){
+				$request->setTransport("ssl");
+				$request->setPort(443);
+			}
+			
 			$request->setEndpoint($user->getAccessEndpoint());
 			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 			$request->setContentType("application/json");
