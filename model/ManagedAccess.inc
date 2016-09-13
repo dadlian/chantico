@@ -30,6 +30,9 @@
 		/** @String */
 		protected $api;
 		
+		/** @Boolean(default=false) */
+		protected $multiSession;
+		
 		protected function getURI(){
 			return $this->getBaseUri()."/apis/{$this->getApi()}/users/{$this->getId()}";
 		}

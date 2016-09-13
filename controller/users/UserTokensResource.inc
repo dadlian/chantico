@@ -40,7 +40,7 @@
 			
 			$access = json_decode($response->getBody(),true);
 			
-			if($user->getExpires() <= time()){
+			if(!$user->isMultiSession() && $user->getExpires() <= time()){
 				//Refresh the user token
 				$accessEndpoint = parse_url($access["tokens"],PHP_URL_PATH);
 				$request->setEndpoint($accessEndpoint);
