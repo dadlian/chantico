@@ -14,6 +14,7 @@
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
 			$searcher->addCriterion("username",Criterion::EQUAL,$normalisedUsername);
+			$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
 			$searcher->addCriterion("id",Criterion::NOT_EQUAL,$user->getId());
 			if($sqlGateway->findUnique("ManagedAccess",$searcher)){
 				ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
