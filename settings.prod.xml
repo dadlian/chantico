@@ -23,7 +23,7 @@
 			<values>
 				<projectpath>/home/wadapi/framework/login/api/</projectpath>
 				<urlroot>login.mywadapi.com</urlroot>
-				<dispatcher>WadapiDispatcher</dispatcher>
+				<dispatcher>Dispatcher</dispatcher>
 			</values>
 		</settings>
 		<settings>
@@ -31,13 +31,6 @@
 			<values>
 				<level>debug</level>
 				<handler>APIError</handler>
-			</values>
-		</settings>
-		<settings>
-			<name>modules</name>
-			<values>
-				<enabled>wadapi</enabled>
-				<disabled>wadui</disabled>
 			</values>
 		</settings>
 		<settings>
