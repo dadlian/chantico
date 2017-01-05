@@ -50,10 +50,10 @@
 					</body>
 				<html>";
 			
-			$url = "https://api:key-ade3853dbd19ecf3efe099367871590e@api.mailgun.net/v3/myticketting.com/messages";
+			$url = "https://api:key-ade3853dbd19ecf3efe099367871590e@api.mailgun.net/v3/ticketingevents.co/messages";
 			$payload = array(
 				"to"=> "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>",
-				"from"=> "The TickeTing Team <noreply@myticketting.com>",
+				"from"=> "The TickeTing Team <noreply@ticketingevents.co>",
 				"subject"=>"Your TickeTing Username",
 				"html"=> $template
 			);
