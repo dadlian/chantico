@@ -48,5 +48,12 @@
 				<salt>T5WshJwpA5Ee97udYrpgv9</salt>
 			</values>
 		</settings>
+		<settings>
+			<name>profiler</name>
+			<values>
+				<api>14844906505123</api>
+				<profiling>on</profiling>
+			</values>
+		</settings>
 	</settingslist>
 </mapping>
