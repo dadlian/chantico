@@ -1,6 +1,6 @@
 <?php
 	class Renewal extends PersistentClass{
-		/** @String */
+		/** @WadapiString */
 		protected $renewedAt;
 	}
 ?>

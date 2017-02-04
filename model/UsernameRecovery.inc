@@ -1,6 +1,6 @@
 <?php
 	class UsernameRecovery extends Resource{
-		/** @String */
+		/** @WadapiString */
 		protected $user;
 		
 		protected function getURI(){

@@ -1,33 +1,33 @@
 <?php
 	class ManagedAccess extends Resource{
-		/** @String */
+		/** @WadapiString */
 		protected $username;
 		
-		/** @String */
+		/** @WadapiString */
 		protected $authentication;
 		
-		/** @String(max=1024) */
+		/** @WadapiString(max=1024) */
 		protected $accessKey;
 		
-		/** @String(max=1024) */
+		/** @WadapiString(max=1024) */
 		protected $accessSecret;
 		
-		/** @String(max=1024) */
+		/** @WadapiString(max=1024) */
 		protected $refreshSecret;
 		
-		/** @String(max=1024) */
+		/** @WadapiString(max=1024) */
 		protected $accessEndpoint;
 		
 		/** @Integer */
 		protected $expires;
 		
-		/** @Collection(type=@String) */
+		/** @Collection(type=@WadapiString) */
 		protected $options;
 		
 		/** @Collection(type=@Object(class='Renewal')) */
 		protected $renewals;
 		
-		/** @String */
+		/** @WadapiString */
 		protected $api;
 		
 		/** @Boolean(default=false) */

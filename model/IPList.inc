@@ -1,9 +1,9 @@
 <?php
 	class IPList extends Resource{
-		/** @String */
+		/** @WadapiString */
 		protected $title;
 		
-		/** @Collection(type=@String) */
+		/** @Collection(type=@WadapiString) */
 		protected $entries;
 		
 		protected function getURI(){

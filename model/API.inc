@@ -3,10 +3,10 @@
 		/** @URL */
 		protected $root;
 		
-		/** @String */
+		/** @WadapiString */
 		protected $accessKey;
 		
-		/** @String */
+		/** @WadapiString */
 		protected $accessSecret;
 		
 		/** @Object(class='IPList') */

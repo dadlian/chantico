@@ -1,12 +1,12 @@
 <?php
 	class PasswordReset extends Resource{
-		/** @String */
+		/** @WadapiString */
 		protected $user;
 		
 		/** @Integer */
 		protected $code;
 		
-		/** @String(values={'requested','reset','cancelled'}) */
+		/** @WadapiString(values={'requested','reset','cancelled'}) */
 		protected $status;
 		
 		protected function getURI(){
