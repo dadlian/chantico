@@ -71,7 +71,7 @@
 			$user->setAccessKey($this->encrypt($accessKey,$this->getFromContent("authentication")));
 			$user->setAccessSecret($this->encrypt($accessSecret,$this->getFromContent("authentication")));
 			$user->setRefreshSecret($this->encrypt($refreshSecret,$this->getFromContent("authentication")));
-			$user->setAccessEndpoint($accessEndpoint,$this->getFromContent("authentication"));
+			$user->setAccessEndpoint($accessEndpoint);
 			$user->setExpires(time()+$lifetime);
 			
 			$optionsArray = $this->getFromContent("options",$options);
@@ -86,7 +86,17 @@
 			//Create APIToken for User to Access its tokens
 			$sqlGateway->save(new APIToken("user",0,md5($user->getUsername()),$user->getAuthentication(),$user->getAuthentication()));
 			
-			$payload = $this->assemblePayload($user);
+			//Build Payload and Send Response
+			$payload = array(
+				"self"=>$userURI,
+				"username"=>$user->getUsername(),
+				"role"=>$user->viewFromOptions("role"),
+				"tokens"=>"{$user->getURI()}/tokens",
+				"options"=>$options,
+				"resets"=>"{$user->getURI()}/resets",
+				"recoveries"=>"{$user->getURI()}/recoveries"
+			);
+			
 			ResponseHandler::created($payload,$user->getURI());
 		}
 		

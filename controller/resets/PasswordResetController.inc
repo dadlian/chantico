@@ -33,11 +33,9 @@
 		
 		protected function getRecordCount(){
 			$count = 0;
-			if(DatabaseAdministrator::tableExists("PasswordReset")){
-				$user = $this->viewFromArguments("user");
-				$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as reset FROM PasswordReset WHERE user = $user");
-				$count = $countResult[0]["reset"];
-			}
+			$user = $this->viewFromArguments("user");
+			$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as reset FROM PasswordReset WHERE user = $user");
+			$count = $countResult[0]["reset"];
 			
 			return $count;
 		}

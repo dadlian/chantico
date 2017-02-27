@@ -39,7 +39,6 @@
 			}
 			
 			$access = json_decode($response->getBody(),true);
-			
 			if(!$user->isMultiSession() && $user->getExpires() <= time()){
 				//Refresh the user token
 				$accessEndpoint = parse_url($access["tokens"],PHP_URL_PATH);
@@ -59,41 +58,27 @@
 					$user->setAccessSecret($this->encrypt($accessSecret,$password));
 					$user->setRefreshSecret($this->encrypt($refreshSecret,$password));
 					$user->setExpires(time()+$lifetime);
-					
 					$sqlGateway->save($user);
 				}
 			}
 			
-			//Invalidate inactive renewal warrants
-			$searcher = new Searcher();
-			$searcher->addCriterion("action",Criterion::EQUAL,"renew");
-			$searcher->addCriterion("executed",Criterion::IS,null);
-			foreach($sqlGateway->find("Warrant",$searcher) as $warrant){
-				//Remove unused renewal stubs
-				$searcher->clearCriteria();
-				$searcher->addCriterion("token",Criterion::EQUAL,md5($warrant->getCode().$_SERVER['REMOTE_ADDR']));
-				if($stub = $sqlGateway->findUnique("RenewalStub",$searcher)){
-					Magistrate::executeWarrant($warrant->getCode());
-					$sqlGateway->delete($stub);
-				}
-			}
-			
+			//We can re-enable token renewals if it ever becomes necessary. For now they have infinite lifespans, but
+			//are invalidated each time they are requested.
 			//Generate a new renewal stub
-			$warrant = Magistrate::issueWarrant("renew");
+			/*$warrant = Magistrate::issueWarrant("renew");
 			
 			$stubToken = $warrant.$_SERVER['REMOTE_ADDR'];
 			$accessKey = $this->encrypt($this->decrypt($user->getAccessKey(),$password),$stubToken);
 			$refreshSecret = $this->encrypt($this->decrypt($user->getRefreshSecret(),$password),$stubToken);
 			$userPassword = $this->encrypt($password,$stubToken);
 			$stub = new RenewalStub(md5($stubToken),$accessKey,$refreshSecret,$userPassword);
-			$sqlGateway->save($stub);
+			$sqlGateway->save($stub);*/
 			
 			$payload = array(
 				"self"=>$this->getBase()."/".RequestHandler::getRequestURI(),
 				"key"=>$this->decrypt($user->getAccessKey(),$password),
 				"secret"=>$this->decrypt($user->getAccessSecret(),$password),
-				"expiry"=>$user->getExpires()-time(),
-				"renew"=>$user->getURI()."/renewals?warrant=$warrant"
+				"expiry"=>$user->getExpires()-time()
 			);
 			
 			ResponseHandler::retrieved($payload,$this->getBase()."/".RequestHandler::getRequestURI(),$user->getModified(),$user->getETag());

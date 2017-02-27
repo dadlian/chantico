@@ -23,11 +23,9 @@
 		
 		protected function getRecordCount(){
 			$count = 0;
-			if(DatabaseAdministrator::tableExists("UsernameRecovery")){
-				$user = $this->viewFromArguments("user");
-				$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as recovery FROM UsernameRecovery WHERE user = $user");
-				$count = $countResult[0]["recovery"];
-			}
+			$user = $this->viewFromArguments("user");
+			$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as recovery FROM UsernameRecovery WHERE user = $user");
+			$count = $countResult[0]["recovery"];
 			
 			return $count;
 		}

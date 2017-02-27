@@ -22,33 +22,41 @@
 				ResponseHandler::forbidden("The given password reset code is invalid for this request.");
 			}
 			
-			$sqlGateway = new SQLGateway();
-			
-			//Get user's APIToken
-			$searcher = new Searcher();
-			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
-			$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
-			
-			//Save user changes to Chantico
-			$authentication = $this->getFromContent("authentication");
-			
-			//Find User Role
-			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			if($api->isSecure()){
-				$request->setTransport("ssl");
-				$request->setPort(443);
+			//Find User Options
+			$role = $user->viewFromOptions("role");
+			$options = array();
+			foreach($user->getOptions() as $option => $value){
+				if($option != "role"){
+					$options[$option] = $value;
+				}
 			}
 			
-			$request->setEndpoint($user->getAccessEndpoint());
-			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-			$request->setContentType("application/json");
-			$response = $request->get();
-			$responseBody = json_decode($response->getBody(),true);
-			$role = $responseBody["role"];
-			$options = array();
-			foreach($responseBody as $option => $value){
-				if(!in_array($option,array("self","tokens","active-token","role"))){
-					$options[$option] = $value;
+			$optionsInitialised = sizeof($options) > 0;
+			foreach($options as $option){
+				if(!$option){
+					$optionsInitialised = false;
+					break;
+				}
+			}
+			
+			if(!$optionsInitialised){
+				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
+				if($api->isSecure()){
+					$request->setTransport("ssl");
+					$request->setPort(443);
+				}
+				
+				$request->setEndpoint($user->getAccessEndpoint());
+				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
+				$request->setContentType("application/json");
+				$response = $request->get();
+				$responseBody = json_decode($response->getBody(),true);
+				$role = $responseBody["role"];
+				
+				foreach($responseBody as $option => $value){
+					if(!in_array($option,array("self","tokens","active-token","role"))){
+						$options[$option] = $value;
+					}
 				}
 			}
 			
@@ -95,6 +103,8 @@
 			$refreshSecret = $body["refresh"];
 			$lifetime = $body["lifetime"];
 			
+			//Save user changes to Chantico
+			$authentication = $this->getFromContent("authentication");
 			$user->setAuthentication(md5($authentication));
 			$user->setAccessKey($this->encrypt($accessKey,$authentication));
 			$user->setAccessSecret($this->encrypt($accessSecret,$authentication));
@@ -103,7 +113,14 @@
 			$user->setExpires(time()+$lifetime);
 			
 			$user->setOptions($user->getOptions());
+			
+			$sqlGateway = new SQLGateway();
 			$sqlGateway->save($user);
+			
+			//Get user's APIToken
+			$searcher = new Searcher();
+			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
+			$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
 			
 			//Update APIToken for User to Access its
 			$apiToken->setAccessKey(md5($user->getUsername()));

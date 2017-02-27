@@ -56,5 +56,12 @@
 				<secret>4af33e5889b1e96ee6b9d2b602a0a1f0</secret>
 			</values>
 		</settings>
+		<settings>
+			<name>profiler</name>
+			<values>
+				<api>14879740076515</api>
+				<profiling>on</profiling>
+			</values>
+		</settings>
 	</settingslist>
 </mapping>

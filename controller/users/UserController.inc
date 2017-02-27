@@ -64,39 +64,37 @@
 		
 		protected function getRecordCount(){
 			$count = 0;
-			if(DatabaseAdministrator::tableExists("ManagedAccess")){
-				$usernames = RequestHandler::getQueryParameter("usernames");
-				$options = RequestHandler::getQueryParameter("options");
-				$access = RequestHandler::getQueryParameter("access");
-				
-				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-				$apiCheck = "api = {$api->getId()}";
-				if($usernames){
-					$patterns = array();
-					foreach(explode(",",$usernames) as $username){
-						$username = strtolower($username);
-						$patterns[] = "username LIKE '$username'";
-					}
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck AND (".implode(" OR ",$patterns).")");
-				}else if($options){
-					$optionsList = explode(",",$options);
-					$optionsQueryParts = array();
-					foreach($optionsList as $option){
-						$parameters = preg_split("/~/",$option);
-						$optionsQueryParts[] = "(name = '{$parameters[0]}' AND value = '{$parameters[1]}')";
-					}
-					
-					$optionsQuery = implode(" OR ",$optionsQueryParts);
-					$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess WHERE ($optionsQuery) AND A.$apiCheck";
-					$countResult = DatabaseAdministrator::execute($query);
-				}else if($access){
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE accessEndpoint = '$access' AND $apiCheck");
-				}else{
-					$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck");
+			$usernames = RequestHandler::getQueryParameter("usernames");
+			$options = RequestHandler::getQueryParameter("options");
+			$access = RequestHandler::getQueryParameter("access");
+			
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			$apiCheck = "api = {$api->getId()}";
+			if($usernames){
+				$patterns = array();
+				foreach(explode(",",$usernames) as $username){
+					$username = strtolower($username);
+					$patterns[] = "username LIKE '$username'";
+				}
+				$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck AND (".implode(" OR ",$patterns).")");
+			}else if($options){
+				$optionsList = explode(",",$options);
+				$optionsQueryParts = array();
+				foreach($optionsList as $option){
+					$parameters = preg_split("/~/",$option);
+					$optionsQueryParts[] = "(name = '{$parameters[0]}' AND value = '{$parameters[1]}')";
 				}
 				
-				$count = $countResult[0]["user"];
+				$optionsQuery = implode(" OR ",$optionsQueryParts);
+				$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess WHERE ($optionsQuery) AND A.$apiCheck";
+				$countResult = DatabaseAdministrator::execute($query);
+			}else if($access){
+				$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE accessEndpoint = '$access' AND $apiCheck");
+			}else{
+				$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck");
 			}
+			
+			$count = $countResult[0]["user"];
 			
 			return $count;
 		}
@@ -148,7 +146,7 @@
 			}
 			
 			$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
-			foreach($sqlGateway->find("ManagedAccess",$searcher,new Sorter(),$count,$start) as $user){
+			foreach($sqlGateway->find("ManagedAccess",$searcher,new Sorter(),$count,$start,false) as $user){
 				$payload[] = $this->assemblePayload($user);
 			}
 			
@@ -156,8 +154,6 @@
 		}
 		
 		protected function assemblePayload($user){
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-
 			//Load User Options from API
 			$realOptions = array();
 			foreach($user->getOptions() as $option => $value){
@@ -175,6 +171,8 @@
 			}
 			
 			if(!$optionsInitialised){
+				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+				
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 				if($api->isSecure()){
 					$request->setTransport("ssl");
@@ -203,15 +201,14 @@
 			$options = $user->getOptions();
 			unset($options["role"]);
 			
-			$userURI = preg_replace("/\{api_id\}/",$api->getId(),$user->getURI());
 			$payload = array(
-				"self"=>$userURI,
+				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),
 				"role"=>$user->viewFromOptions("role"),
-				"tokens"=>"$userURI/tokens",
+				"tokens"=>"{$user->getURI()}/tokens",
 				"options"=>$options,
-				"resets"=>"$userURI/resets",
-				"recoveries"=>"$userURI/recoveries"
+				"resets"=>"{$user->getURI()}/resets",
+				"recoveries"=>"{$user->getURI()}/recoveries"
 			);
 			
 			return $payload;

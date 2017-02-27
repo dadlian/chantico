@@ -1,6 +1,7 @@
 <?php
 	abstract class ChanticoController extends PagedResourceController{
-		public function execute(){
+		//IP White and Black List can be re-enabled if necessary
+		/*public function execute(){
 			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			
 			$blacklist = $api->getBlacklist();
@@ -14,7 +15,7 @@
 			}
 			
 			parent::execute();
-		}
+		}*/
 		
 		protected function getResourceObject($class,$field,$value){
 			if($class == "ManagedAccess"){

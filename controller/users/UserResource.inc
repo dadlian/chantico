@@ -8,27 +8,55 @@
 		
 		protected function put(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			$normalisedUsername = strtolower($this->getFromContent("username"));
-			
 			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
-			$searcher->addCriterion("username",Criterion::EQUAL,$normalisedUsername);
-			$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
-			$searcher->addCriterion("id",Criterion::NOT_EQUAL,$user->getId());
-			if($sqlGateway->findUnique("ManagedAccess",$searcher)){
-				ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
+			
+			//Set new user values
+			$authentication = $this->getFromContent("authentication");
+			$authentication = $authentication?md5($authentication):$user->getAuthentication();
+			
+			//Check whether username already exists
+			$user->setUsername($normalisedUsername);
+			if($user->isDirty('username')){
+				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+				$searcher = new Searcher();
+				$searcher->addCriterion("username",Criterion::EQUAL,$normalisedUsername);
+				$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
+				$searcher->addCriterion("id",Criterion::NOT_EQUAL,$user->getId());
+				if($sqlGateway->findUnique("ManagedAccess",$searcher)){
+					ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
+				}
 			}
 			
-			//Get user's APIToken
-			$searcher->clearCriteria();
-			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
-			$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
+			//Update User Options
+			$user->insertToOptions("role",$this->getFromContent("role"));
+			foreach($this->getFromContent("options",array()) as $option => $value){
+				$user->insertToOptions($option,$value);
+			}
 			
-			//Save user changes to Chantico
-			$authentication = $this->getFromContent("authentication");
-			$user->setUsername($normalisedUsername);
-			if($authentication){
+			if($user->isDirty("options")){
+				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
+				if($api->isSecure()){
+					$request->setTransport("ssl");
+					$request->setPort(443);
+				}
+			
+				$request->setEndpoint($user->getAccessEndpoint());
+				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
+				$request->setContentType("application/json");
+				$request->assureConsistency();
+				$payload = json_encode($user->getOptions());
+				$request->setBody($payload);
+				$response = $request->put();
+				$body = json_decode($response->getBody(),true);
+			}
+			
+			//Update user password if necessary
+			$user->setAuthentication($authentication);
+			if($user->isDirty("authentication")){
+				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+				
 				//Delete Old Access Tokens
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 				if($api->isSecure()){
@@ -46,7 +74,8 @@
 				$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
 				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setContentType("application/json");
-				$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
+				$payload = json_encode($user->getOptions());
+				
 				$request->setBody($payload);
 				$response = $request->post();
 				$body = json_decode($response->getBody(),true);
@@ -57,13 +86,10 @@
 					ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 				}
 			
-				$options = array();
-				if($response->getStatusCode() == 201){
-					$responseBody = json_decode($response->getBody(),true);
-					foreach($responseBody as $option => $value){
-						if(!in_array($option,array("self","tokens","active-token","role"))){
-							$options[$option] = $value;
-						}
+				$responseBody = json_decode($response->getBody(),true);
+				foreach($responseBody as $option => $value){
+					if(!in_array($option,array("self","tokens","active-token","role"))){
+						$user->insertToOptions($option,$value);
 					}
 				}
 				
@@ -88,43 +114,26 @@
 				$refreshSecret = $body["refresh"];
 				$lifetime = $body["lifetime"];
 				
-				$user->setAuthentication(md5($authentication));
-				$user->setAccessKey($this->encrypt($accessKey,$authentication));
-				$user->setAccessSecret($this->encrypt($accessSecret,$authentication));
-				$user->setRefreshSecret($this->encrypt($refreshSecret,$authentication));
+				$user->setAccessKey($this->encrypt($accessKey,$this->getFromContent("authentication")));
+				$user->setAccessSecret($this->encrypt($accessSecret,$this->getFromContent("authentication")));
+				$user->setRefreshSecret($this->encrypt($refreshSecret,$this->getFromContent("authentication")));
 				$user->setAccessEndpoint($accessEndpoint);
 				$user->setExpires(time()+$lifetime);
-			}else{
-				//Update Access
-				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-				if($api->isSecure()){
-					$request->setTransport("ssl");
-					$request->setPort(443);
-				}
-			
-				$request->setEndpoint($user->getAccessEndpoint());
-				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-				$request->setContentType("application/json");
-				$request->assureConsistency();
-				$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
-				$request->setBody($payload);
-				$response = $request->put();
-				$body = json_decode($response->getBody(),true);
 			}
 			
-			$options = $options?$options:array();
-			$optionsArray = $this->getFromContent("options",$options);
-			if(!array_key_exists("role",$optionsArray)){
-				$optionsArray["role"] = $this->getFromContent("role");
+			//If the user's username or password have changed, Update APIToken for User to Access its credentials
+			if($user->isDirty("username") || $user->isDirty("authentication")){
+				$searcher = new Searcher();
+				$searcher->addCriterion("accessKey",Criterion::EQUAL,md5(Photographer::getSnapshot($user,"username")));
+				$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
+				
+				$apiToken->setAccessKey(md5($user->getUsername()));
+				$apiToken->setAccessSecret($user->getAuthentication());
+				$apiToken->setRefreshSecret($user->getAuthentication());
+				$sqlGateway->save($apiToken);
 			}
-			$user->setOptions($optionsArray);
+			
 			$sqlGateway->save($user);
-			
-			//Update APIToken for User to Access its
-			$apiToken->setAccessKey(md5($user->getUsername()));
-			$apiToken->setAccessSecret($user->getAuthentication());
-			$apiToken->setRefreshSecret($user->getAuthentication());
-			$sqlGateway->save($apiToken);
 			
 			$payload = $this->assemblePayload($user);
 			ResponseHandler::modified($payload,$user->getURI());

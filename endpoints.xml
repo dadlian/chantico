@@ -9,7 +9,7 @@
 				<administrator>
 					<permissions>
 						<permission1>read</permission1>
-						<permission1>write</permission1>
+						<permission2>write</permission2>
 					</permissions>
 				</administrator>
 			</roles>
@@ -28,7 +28,7 @@
 				<administrator>
 					<permissions>
 						<permission1>read</permission1>
-						<permission1>write</permission1>
+						<permission2>write</permission2>
 					</permissions>
 				</administrator>
 			</roles>
@@ -46,8 +46,8 @@
 			<roles>
 				<administrator>
 					<permissions>
-						<permission1>write</permission1>
-						<permission2>read</permission2>
+						<permission1>read</permission1>
+						<permission2>write</permission2>
 					</permissions>
 				</administrator>
 			</roles>
@@ -67,14 +67,14 @@
 			<roles>
 				<administrator>
 					<permissions>
-						<permission1>write</permission1>
-						<permission2>read</permission2>
+						<permission1>read</permission1>
+						<permission2>write</permission2>
 					</permissions>
 				</administrator>
 				<user>
 					<permissions>
-						<permission1>write</permission1>
-						<permission2>read</permission2>
+						<permission1>read</permission1>
+						<permission2>write</permission2>
 					</permissions>
 				</user>
 			</roles>
@@ -105,7 +105,7 @@
 			<requirements>
 			</requirements>
 		</endpoint>
-		<endpoint>
+		<!-- endpoint>
 			<name>User Renewals Collection</name>
 			<path>apis/@/users/@/renewals</path>
 			<controller>UserRenewalsCollection</controller>
@@ -128,7 +128,7 @@
 			</parameters>
 			<requirements>
 			</requirements>
-		</endpoint>
+		</endpoint -->
 		<endpoint>
 			<name>Password Resets Collection</name>
 			<path>apis/@/users/@/resets</path>
