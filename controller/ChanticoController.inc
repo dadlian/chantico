@@ -17,7 +17,7 @@
 			parent::execute();
 		}*/
 		
-		protected function getResourceObject($class,$field,$value){
+		protected function getResourceObject($class,$field,$value,$lazyLoad=true){
 			if($class == "ManagedAccess"){
 				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 				
@@ -26,7 +26,7 @@
 				$searcher->addCriterion($field,Criterion::EQUAL,$value);
 				$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
 				
-				$user = $sqlGateway->findUnique($class,$searcher);
+				$user = $sqlGateway->findUnique($class,$searcher,null,0,0,$lazyLoad);
 				if(!$user && !CryptKeeper::exhume($value,$field)){
 					ResponseHandler::missing("There is presently no resource with the given URI.");
 				}
