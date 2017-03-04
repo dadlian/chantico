@@ -88,7 +88,7 @@
 			
 			//Build Payload and Send Response
 			$payload = array(
-				"self"=>$userURI,
+				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),
 				"role"=>$user->viewFromOptions("role"),
 				"tokens"=>"{$user->getURI()}/tokens",
