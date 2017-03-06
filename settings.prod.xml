@@ -24,6 +24,7 @@
 				<projectpath>/home/wadapi/framework/login/api/</projectpath>
 				<urlroot>login.mywadapi.com</urlroot>
 				<dispatcher>Dispatcher</dispatcher>
+				<adminpass>9e7297ae08b4a1b83a2cd27fbff82977</adminpass>
 			</values>
 		</settings>
 		<settings>

@@ -15,9 +15,6 @@
 		/** @Object(class='IPList') */
 		protected $blacklist;
 		
-		/** @Collection(type=@Object(class='ManagedAccess')) */
-		protected $users;
-		
 		/** @Boolean */
 		protected $secure;
 		
