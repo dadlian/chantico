@@ -91,6 +91,7 @@
 				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),
 				"role"=>$user->viewFromOptions("role"),
+				"access"=>"{$api->getRoot()}{$user->getAccessEndpoint()}",
 				"tokens"=>"{$user->getURI()}/tokens",
 				"options"=>$options,
 				"resets"=>"{$user->getURI()}/resets",

@@ -28,12 +28,9 @@
 		
 		protected function getETag(){
 			$eTag = $this->getRoot();
-			foreach($this->getWhitelist() as $ip){
-				$eTag.=$ip->getETag();
-			}
-			foreach($this->getBlacklist() as $ip){
-				$eTag.=$ip->getETag();
-			}
+			$eTag.= $this->getAccessKey();
+			$eTag.= $this->getAccessSecret();
+			$eTag.= $this->getSecure();
 		
 			return md5($this->getModified().$eTag);
 		}

@@ -170,9 +170,8 @@
 				}
 			}
 			
+			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			if(!$optionsInitialised){
-				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-				
 				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
 				if($api->isSecure()){
 					$request->setTransport("ssl");
@@ -205,6 +204,7 @@
 				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),
 				"role"=>$user->viewFromOptions("role"),
+				"access"=>"{$api->getRoot()}{$user->getAccessEndpoint()}",
 				"tokens"=>"{$user->getURI()}/tokens",
 				"options"=>$options,
 				"resets"=>"{$user->getURI()}/resets",
