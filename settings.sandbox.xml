@@ -19,11 +19,12 @@
 			</values>
 		</settings>
 		<settings>
-			<name>install</name>	
+			<name>install</name>
 			<values>
 				<projectpath>/home/wadapi/sandbox/login/api/</projectpath>
 				<urlroot>login.sandbox.mywadapi.com</urlroot>
 				<dispatcher>Dispatcher</dispatcher>
+				<adminpass>6106d266ad70d72e9aa389d3708ff604</adminpass>
 			</values>
 		</settings>
 		<settings>
