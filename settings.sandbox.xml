@@ -40,6 +40,8 @@
 				<formats>application/json</formats>
 				<languages>en,en-au,en-bz,en-ca,en-ie,en-jm,en-nz,en-ph,en-za,en-tt,en-gb,en-us,en-zw</languages>
 				<charsets>utf-8</charsets>
+				<key>d3b96c7c137b4f017234abdacf631f8c</key>
+				<secret>4af33e5889b1e96ee6b9d2b602a0a1f0</secret>
 			</values>
 		</settings>
 		<settings>

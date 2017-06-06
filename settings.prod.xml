@@ -19,7 +19,7 @@
 			</values>
 		</settings>
 		<settings>
-			<name>install</name>	
+			<name>install</name>
 			<values>
 				<projectpath>/home/wadapi/framework/login/api/</projectpath>
 				<urlroot>login.mywadapi.com</urlroot>
@@ -40,6 +40,8 @@
 				<formats>application/json</formats>
 				<languages>en,en-au,en-bz,en-ca,en-ie,en-jm,en-nz,en-ph,en-za,en-tt,en-gb,en-us,en-zw</languages>
 				<charsets>utf-8</charsets>
+				<key>35c039bd8224bcfb5fe7ce5a9e7a1477</key>
+				<secret>1b5e2e3191dcfb1fbfbfcd012208fcd0</secret>
 			</values>
 		</settings>
 		<settings>
