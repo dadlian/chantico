@@ -55,7 +55,7 @@
 			<name>profiler</name>
 			<values>
 				<api>14844906505123</api>
-				<profiling>on</profiling>
+				<profiling>off</profiling>
 			</values>
 		</settings>
 	</settingslist>
