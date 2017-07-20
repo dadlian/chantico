@@ -74,7 +74,11 @@
 			$user->setAccessEndpoint($accessEndpoint);
 			$user->setExpires(time()+$lifetime);
 
-			$optionsArray = $this->getFromContent("options",$options);
+			$optionsArray = array();
+			foreach($this->getFromContent("options",$options) as $option => $value){
+				$optionsArray[$option] = json_encode($value);
+			}
+
 			if(!array_key_exists("role",$optionsArray)){
 				$optionsArray["role"] = $this->getFromContent("role");
 			}

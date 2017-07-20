@@ -32,7 +32,7 @@
 				$invalidArguments[] = "options";
 			}else{
 				foreach($this->getFromContent("options",array()) as $option){
-					if(!is_string($option)){
+					if(!is_string($option) && !is_array($option)){
 						$invalidArguments[] = "options";
 						break;
 					}
@@ -197,7 +197,11 @@
 				$sqlGateway->save($user);
 			}
 
-			$options = $user->getOptions();
+			$options = array();
+			foreach($user->getOptions() as $option => $value){
+				$options[$option] = json_decode($value);
+			}
+
 			unset($options["role"]);
 
 			$payload = array(
