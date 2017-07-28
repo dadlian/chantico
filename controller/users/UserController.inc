@@ -82,7 +82,8 @@
 				$optionsQueryParts = array();
 				foreach($optionsList as $option){
 					$parameters = preg_split("/~/",$option);
-					$optionsQueryParts[] = "(name = '{$parameters[0]}' AND value = '{$parameters[1]}')";
+					$jsonParameter = addslashes(json_encode($parameters[1]));
+					$optionsQueryParts[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
 				}
 
 				$optionsQuery = implode(" OR ",$optionsQueryParts);
@@ -129,7 +130,8 @@
 				$optionsQueryParts = array();
 				foreach($optionsList as $option){
 					$parameters = preg_split("/~/",$option);
-					$optionsQueryParts[] = "(name = '{$parameters[0]}' AND value = '{$parameters[1]}')";
+					$jsonParameter = addslashes(json_encode($parameters[1]));
+					$optionsQueryParts[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
 				}
 
 				$optionsQuery = implode(" OR ",$optionsQueryParts);
@@ -187,7 +189,7 @@
 					$responseBody = json_decode($response->getBody(),true);
 					foreach($responseBody as $option => $value){
 						if(!in_array($option,array("self","tokens","active-token"))){
-							$options[$option] = $value;
+							$options[$option] = json_encode($value);
 						}
 					}
 				}
@@ -199,7 +201,12 @@
 
 			$options = array();
 			foreach($user->getOptions() as $option => $value){
-				$options[$option] = json_decode($value);
+				$optionValue = json_decode($value);
+				if(json_last_error() != JSON_ERROR_NONE){
+					$optionValue = $value;
+				}
+
+				$options[$option] = $optionValue;
 			}
 
 			unset($options["role"]);

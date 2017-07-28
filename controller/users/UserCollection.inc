@@ -76,7 +76,7 @@
 
 			$optionsArray = array();
 			foreach($this->getFromContent("options",$options) as $option => $value){
-				$optionsArray[$option] = json_encode($value);
+				$optionsArray[$option] = $value?json_encode($value):$value;
 			}
 
 			if(!array_key_exists("role",$optionsArray)){
