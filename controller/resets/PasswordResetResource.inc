@@ -27,7 +27,10 @@
 			$options = array();
 			foreach($user->getOptions() as $option => $value){
 				if($option != "role"){
-					$options[$option] = $value;
+					$options[$option] = json_decode($value);
+					if(json_last_error() != JSON_ERROR_NONE){
+						$options[$option] = $value;
+					}
 				}
 			}
 
