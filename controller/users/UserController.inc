@@ -206,15 +206,20 @@
 					$optionValue = $value;
 				}
 
-				$options[$option] = $optionValue;
-			}
+			$options[$option] = $optionValue;
+		}
 
 			unset($options["role"]);
+
+			$realRole = json_decode($user->viewFromOptions("role"));
+			if(json_last_error() != JSON_ERROR_NONE){
+				$realRole = $user->viewFromOptions("role");
+			}
 
 			$payload = array(
 				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),
-				"role"=>$user->viewFromOptions("role"),
+				"role"=>$realRole,
 				"access"=>"{$api->getRoot()}{$user->getAccessEndpoint()}",
 				"tokens"=>"{$user->getURI()}/tokens",
 				"options"=>$options,
