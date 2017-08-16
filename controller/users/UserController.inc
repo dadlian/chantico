@@ -206,8 +206,8 @@
 					$optionValue = $value;
 				}
 
-			$options[$option] = $optionValue;
-		}
+				$options[$option] = $optionValue;
+			}
 
 			unset($options["role"]);
 
