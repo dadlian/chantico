@@ -29,9 +29,12 @@
 			}
 
 			//Update User Options
+			$userOptions = array();
 			$user->insertToOptions("role",$this->getFromContent("role"));
+			$userOptions["role"] = $this->getFromContent("role");
 			foreach($this->getFromContent("options",array()) as $option => $value){
 				$user->insertToOptions($option,$value?json_encode($value):$value);
+				$userOptions[$option] = $value;
 			}
 
 			if($user->isDirty("options")){
@@ -46,7 +49,7 @@
 				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setContentType("application/json");
 				$request->assureConsistency();
-				$payload = json_encode($user->getOptions());
+				$payload = json_encode($userOptions);
 				$request->setBody($payload);
 				$response = $request->put();
 				$body = json_decode($response->getBody(),true);
@@ -74,7 +77,7 @@
 				$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
 				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
 				$request->setContentType("application/json");
-				$payload = json_encode($user->getOptions());
+				$payload = json_encode($userOptions);
 
 				$request->setBody($payload);
 				$response = $request->post();
