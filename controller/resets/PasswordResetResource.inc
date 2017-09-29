@@ -23,7 +23,11 @@
 			}
 
 			//Find User Options
-			$role = $user->viewFromOptions("role");
+			$role = json_decode($user->viewFromOptions("role"));
+			if(json_last_error() != JSON_ERROR_NONE){
+				$role = $user->viewFromOptions("role");
+			}
+
 			$options = array();
 			foreach($user->getOptions() as $option => $value){
 				if($option != "role"){
@@ -99,6 +103,7 @@
 			$response = $request->post();
 
 			if($response->getStatusCode() != 201){
+				var_dump($response->getBody()); exit;
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 
