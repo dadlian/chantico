@@ -43,13 +43,14 @@
 				}
 			}
 
-			$accessEndpoint = parse_url($body["self"],PHP_URL_PATH);
-			$tokensEndpoint = parse_url($body["tokens"],PHP_URL_PATH);
+			$accessEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($api->getRoot()))."/","",$body["self"]);
+			$tokensEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($api->getRoot()))."/","",$body["tokens"]);
+
 			$accessKey = $body["active-token"]["key"];
 			$refreshSecret = $body["active-token"]["refresh"];
 
 			//Refresh Access Token
-			$request->setEndpoint($tokensEndpoint);
+			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH).$tokensEndpoint);
 			$request->authorise($accessKey,$refreshSecret);
 			$request->setBody(json_encode(array("lifetime"=>SettingsManager::getSetting("options","lifetime"))));
 			$response = $request->post();
