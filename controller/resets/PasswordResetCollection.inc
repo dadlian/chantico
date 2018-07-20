@@ -71,7 +71,8 @@
 					</body>
 				<html>";
 
-				$url = "https://api:key-ade3853dbd19ecf3efe099367871590e@api.mailgun.net/v3/ticketingevents.co/messages";
+				$apiKey = SettingsManager::getSetting("mailgun","ticketingkey");
+				$url = "https://api:key-{$apiKey}@api.mailgun.net/v3/ticketingevents.co/messages";
 				$payload = array(
 					"to"=> "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>",
 					"from"=> "The TickeTing Team <noreply@ticketingevents.co>",

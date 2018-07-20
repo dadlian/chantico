@@ -171,7 +171,8 @@
 				</body>
 			<html>";
 
-			$url = "https://api:key-4d5d0be711735d4830f0ea72a38b0053@api.mailgun.net/v3/antiguacharteryachtmeeting.com/messages";
+			$apiKey = SettingsManager::getSetting("mailgun","acymkey");
+			$url = "https://api:key-{$apiKey}@api.mailgun.net/v3/antiguacharteryachtmeeting.com/messages";
 			$payload = array(
 				"to"=>"{$options['first-name']} {$options['last-name']} <{$options['email']}>",
 				"from"=> "Antigua Charter Yacht Meeting <noreply@antiguacharteryachtmeeting.com>",

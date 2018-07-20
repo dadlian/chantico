@@ -4,7 +4,7 @@
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
-			
+
 			//Create New Username Recovery Request
 			$recovery = new UsernameRecovery();
 			$recovery->setUser($this->viewFromArguments("user"));
@@ -49,15 +49,16 @@
 						</table>
 					</body>
 				<html>";
-			
-			$url = "https://api:key-ade3853dbd19ecf3efe099367871590e@api.mailgun.net/v3/ticketingevents.co/messages";
+
+			$apiKey = SettingsManager::getSetting("mailgun","ticketingkey");
+			$url = "https://api:key-{$apiKey}@api.mailgun.net/v3/ticketingevents.co/messages";
 			$payload = array(
 				"to"=> "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>",
 				"from"=> "The TickeTing Team <noreply@ticketingevents.co>",
 				"subject"=>"Your TickeTing Username",
 				"html"=> $template
 			);
-			
+
 			$options = array(
 				'http' => array(
 					'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
@@ -67,11 +68,11 @@
 			);
 			$context  = stream_context_create($options);
 			$result = file_get_contents($url, false, $context);
-			
+
 			$payload = $this->assemblePayload($recovery);
 			ResponseHandler::created($payload,$recovery->getURI());
 		}
-		
+
 		protected function isConsistent($modifiedDate,$eTag){
 			return true;
 		}
