@@ -1,0 +1,99 @@
+{
+  "endpoints":[
+    {
+      "name":"Manage Whitelist",
+      "path":"whitelist",
+      "controller":"WhitelistResource",
+      "roles":{
+        "administrator":["read","write"]
+      },
+      "parameters":[],
+      "requirements":["ips"]
+    },
+    {
+      "name":"Manage Blacklist",
+      "path":"blacklist",
+      "controller":"BlacklistResource",
+      "roles":{
+        "administrator":["read","write"]
+      },
+      "parameters":["api"],
+      "requirements":["ips"]
+    },
+    {
+      "name":"User Collection",
+      "path":"apis/@/users",
+      "controller":"UserCollection",
+      "roles":{
+        "administrator":["read","write"]
+      },
+      "parameters":["api"],
+      "requirements":["username","authentication","role"]
+    },
+    {
+      "name":"User Resource",
+      "path":"apis/@/users/@",
+      "controller":"UserResource",
+      "roles":{
+        "administrator":["read","write"],
+        "user":["read","write"]
+      },
+      "parameters":["api","user"],
+      "requirements":["username","role"]
+    },
+    {
+      "name":"User Tokens Resource",
+      "path":"apis/@/users/@/tokens",
+      "controller":"UserTokensResource",
+      "roles":{
+        "user":["read"]
+      },
+      "parameters":["api","user"],
+      "requirements":[]
+    },
+    {
+      "name":"User Renewals Collection",
+      "path":"apis/@/users/@/renewals",
+      "controller":"UserRenewalsCollection",
+      "roles":{
+        "administrator":["read","write"],
+        "refresher":["write"]
+      },
+      "parameters":["api","user"],
+      "requirements":[]
+    },
+    {
+      "name":"Password Resets Collection",
+      "path":"apis/@/users/@/resets",
+      "controller":"PasswordResetCollection",
+      "roles":{
+        "administrator":["read","write"],
+        "resetter":["read","write"]
+      },
+      "parameters":["api","user"],
+      "requirements":["email","recipient"]
+    },
+    {
+      "name":"Password Reset Resource",
+      "path":"apis/@/users/@/resets/@",
+      "controller":"PasswordResetResource",
+      "roles":{
+        "administrator":["read","write"],
+        "resetter":["read","write"]
+      },
+      "parameters":["api","user","reset"],
+      "requirements":["code","authentication"]
+    },
+    {
+      "name":"Username Recovery Collection",
+      "path":"apis/@/users/@/recoveries",
+      "controller":"UsernameRecoveryCollection",
+      "roles":{
+        "administrator":["read","write"],
+        "resetter":["read","write"]
+      },
+      "parameters":["api","user"],
+      "requirements":["email","recipient"]
+    }
+  ]
+}

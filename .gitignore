@@ -3,3 +3,7 @@ settings.xml
 settings.prod.xml
 settings.sandbox.xml
 access_keys.txt
+vendor
+deploy.sh
+api-doc.odt
+exclude.txt

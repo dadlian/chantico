@@ -1,0 +1,17 @@
+{
+    "name": "dadlian/wadapi",
+    "type": "project",
+    "require": {
+        "dadlian/wadapi-framework": "^1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sven James",
+            "email": "sven@kycsar.com"
+        }
+    ],
+    "scripts":{
+      "post-create-project-cmd": "Wadapi\\System\\ComposerScripts::setup"
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "development": {
+        "database": {
+            "hostname": "localhost",
+            "database": "chantico",
+            "username": "root",
+            "password": "c0r1nTh14n",
+            "prefix": "chantico"
+        },
+        "install": {
+            "url": "localhost/acym/auth"
+        },
+        "logging": {
+            "level": "debug"
+        }
+    },
+    "production": {
+        "database": {
+            "hostname": "",
+            "database": "",
+            "username": "",
+            "password": "",
+            "prefix": ""
+        },
+        "install": {
+            "url": ""
+        },
+        "logging": {
+            "level": ""
+        }
+    }
+}
