@@ -17,54 +17,54 @@
       "roles":{
         "administrator":["read","write"]
       },
-      "parameters":["api"],
+      "parameters":[],
       "requirements":["ips"]
     },
     {
       "name":"User Collection",
-      "path":"apis/@/users",
+      "path":"users",
       "controller":"UserCollection",
       "roles":{
         "administrator":["read","write"]
       },
-      "parameters":["api"],
+      "parameters":[],
       "requirements":["username","authentication","role"]
     },
     {
       "name":"User Resource",
-      "path":"apis/@/users/@",
+      "path":"users/@",
       "controller":"UserResource",
       "roles":{
         "administrator":["read","write"],
         "user":["read","write"]
       },
-      "parameters":["api","user"],
+      "parameters":["user"],
       "requirements":["username","role"]
     },
     {
       "name":"User Tokens Resource",
-      "path":"apis/@/users/@/tokens",
+      "path":"users/@/tokens",
       "controller":"UserTokensResource",
       "roles":{
         "user":["read"]
       },
-      "parameters":["api","user"],
+      "parameters":["user"],
       "requirements":[]
     },
     {
       "name":"User Renewals Collection",
-      "path":"apis/@/users/@/renewals",
+      "path":"users/@/renewals",
       "controller":"UserRenewalsCollection",
       "roles":{
         "administrator":["read","write"],
         "refresher":["write"]
       },
-      "parameters":["api","user"],
+      "parameters":["user"],
       "requirements":[]
     },
     {
       "name":"Password Resets Collection",
-      "path":"apis/@/users/@/resets",
+      "path":"users/@/resets",
       "controller":"PasswordResetCollection",
       "roles":{
         "administrator":["read","write"],
@@ -75,24 +75,24 @@
     },
     {
       "name":"Password Reset Resource",
-      "path":"apis/@/users/@/resets/@",
+      "path":"users/@/resets/@",
       "controller":"PasswordResetResource",
       "roles":{
         "administrator":["read","write"],
         "resetter":["read","write"]
       },
-      "parameters":["api","user","reset"],
+      "parameters":["user","reset"],
       "requirements":["code","authentication"]
     },
     {
       "name":"Username Recovery Collection",
-      "path":"apis/@/users/@/recoveries",
+      "path":"users/@/recoveries",
       "controller":"UsernameRecoveryCollection",
       "roles":{
         "administrator":["read","write"],
         "resetter":["read","write"]
       },
-      "parameters":["api","user"],
+      "parameters":["user"],
       "requirements":["email","recipient"]
     }
   ]

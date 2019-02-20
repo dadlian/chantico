@@ -1,69 +1,58 @@
 <?php
+	use Wadapi\Http\ResponseHandler;
+	use Wadapi\System\SettingsManager;
+	use Wadapi\Persistence\SQLGateway;
+	use Wadapi\Persistence\Searcher;
+	use Wadapi\Persistence\Criterion;
+
 	class UserCollection extends UserController{
 		protected function post(){
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			$normalisedUsername = strtolower($this->getFromContent("username"));
 
 			$sqlGateway = new SQLGateway();
 			$searcher = new Searcher();
 			$searcher->addCriterion("username",Criterion::EQUAL,$normalisedUsername);
-			$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
 			if($sqlGateway->findUnique("ManagedAccess",$searcher)){
 				ResponseHandler::conflict("A user identified by '$normalisedUsername' already exists.");
 			}
 
 			//Create New Access
-			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			if($api->isSecure()){
-				$request->setTransport("ssl");
-				$request->setPort(443);
-			}
+			$payload = array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array()));
+			$response = $this->sendInstancePost("/access",$payload);
 
-			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
-			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-			$request->setContentType("application/json");
-			$payload = json_encode(array_merge(array("role"=>$this->getFromContent("role")),$this->getFromContent("options",array())));
-			$request->setBody($payload);
-			$response = $request->post();
-			$body = json_decode($response->getBody(),true);
-
-			if($response->getStatusCode() == 400){
-				ResponseHandler::bad(str_replace("arguments","directives",$body["message"]));
-			}else if($response->getStatusCode() != 201){
+			if($response['code'] == 400){
+				ResponseHandler::bad(str_replace("arguments","directives",$response["body"]["message"]));
+			}else if($response['code'] != 201){
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 
 			$options = array();
-			if($response->getStatusCode() == 201){
-				$responseBody = json_decode($response->getBody(),true);
-				foreach($responseBody as $option => $value){
+			if($response['code'] == 201){
+				foreach($response["body"] as $option => $value){
 					if(!in_array($option,array("self","tokens","active-token","role"))){
 						$options[$option] = $value;
 					}
 				}
 			}
 
-			$accessEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($api->getRoot()))."/","",$body["self"]);
-			$tokensEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($api->getRoot()))."/","",$body["tokens"]);
+			$instanceUrl = SettingsManager::getSetting("wadapi-instance","url");
+			$accessEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($instanceUrl))."/","",$response["body"]["self"]);
+			$tokensEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($instanceUrl))."/","",$response["body"]["tokens"]);
 
-			$accessKey = $body["active-token"]["key"];
-			$refreshSecret = $body["active-token"]["refresh"];
+			$accessKey = $response["body"]["active-token"]["key"];
+			$refreshSecret = $response["body"]["active-token"]["refresh"];
 
 			//Refresh Access Token
-			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH).$tokensEndpoint);
-			$request->authorise($accessKey,$refreshSecret);
-			$request->setBody(json_encode(array("lifetime"=>SettingsManager::getSetting("options","lifetime"))));
-			$response = $request->post();
+			$response = $this->sendInstancePost($tokensEndpoint,array(),$accessKey,$refreshSecret);
 
-			if($response->getStatusCode() != 201){
+			if($response['code'] !== 201){
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 
-			$body = json_decode($response->getBody(),true);
-			$accessKey = $body["key"];
-			$accessSecret = $body["secret"];
-			$refreshSecret = $body["refresh"];
-			$lifetime = $body["lifetime"];
+			$accessKey = $response["body"]["key"];
+			$accessSecret = $response["body"]["secret"];
+			$refreshSecret = $response["body"]["refresh"];
+			$lifetime = $response["body"]["lifetime"];
 
 			//Save User to Chantico
 			$user = new ManagedAccess();
@@ -73,7 +62,7 @@
 			$user->setAccessSecret($this->encrypt($accessSecret,$this->getFromContent("authentication")));
 			$user->setRefreshSecret($this->encrypt($refreshSecret,$this->getFromContent("authentication")));
 			$user->setAccessEndpoint($accessEndpoint);
-			$user->setExpires(time()+$lifetime);
+			$user->setExpires($lifetime?(time()+$lifetime):0);
 
 			$optionsArray = array();
 			foreach($this->getFromContent("options",$options) as $option => $value){
@@ -83,25 +72,22 @@
 			if(!array_key_exists("role",$optionsArray)){
 				$optionsArray["role"] = $this->getFromContent("role");
 			}
-			$user->setOptions($optionsArray);
 
-			$user->setApi($api->getId());
+			$user->setOptions($optionsArray);
 			$sqlGateway->save($user);
 
 			//Create APIToken for User to Access its tokens
 			$sqlGateway->save(new APIToken("user",0,md5($user->getUsername()),$user->getAuthentication(),$user->getAuthentication()));
 
 			//Notify user of new Account
-			if(in_array($api->getId(),[14915827114381,14915100262884])){
-				$this->notify($user,$options);
-			}
+			$this->notify($user,$options);
 
 			//Build Payload and Send Response
 			$payload = array(
 				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),
 				"role"=>$user->viewFromOptions("role"),
-				"access"=>"{$api->getRoot()}{$user->getAccessEndpoint()}",
+				"access"=>"{$instanceUrl}{$user->getAccessEndpoint()}",
 				"tokens"=>"{$user->getURI()}/tokens",
 				"options"=>$options,
 				"resets"=>"{$user->getURI()}/resets",
@@ -116,82 +102,45 @@
 		}
 
 		private function notify($user,$options){
-			$template = "<html>
-				<head>
-					<title>New ACYM Account</title>
-				</head>
-				<body>
-					<table>
-						<tr>
-							<td>
-								<img style='float:left; width:25%;' src='https://registration.antiguacharteryachtmeeting.com/assets/email_logo.jpg' alt='ACYM logo' style='border:none;'>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<h3 style='font-size:14px; font-family:Verdana;'>Dear {$options['first-name']},</h3>
-								<p style='font-size:14px; font-family:Verdana;'>Your personal account for the Antigua Charter Yacht Meeting has successfully been created.</p>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<div>Username:</div>
-								<div><strong>{$user->getUsername()}</strong></div>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<p style='font-size:14px; font-family:Verdana;'>
-									You may now <a href='https://registration.antiguacharteryachtmeeting.com/#/profile'>submit a
-									registration application</a> to attend any of our upcoming events.
-								</p>
-							</td>
-						</tr>
-						<tr>
-							<td height='20px'>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<div>Regards,</div>
-								<div>Antigua Charter Yacht Meeting</div>
-								<div>Tel.: +1 (268) 460-1059</div>
-								<div><a href='http://antiguayachtshow.com'>http://antiguayachtshow.com</a></div>
-							</td>
-						</tr>
-						<tr>
-							<td><hr /></td>
-						</tr>
-						<tr>
-							<td bgcolor='#1489BE' style='color:#FFFFFF;padding:10px;font-size:12px;text-align:center;'>
-									&copy; ".date('Y')." Antigua Charter Yacht Meeting, Antigua, W.I.
-							</td>
-						</tr>
-					</table>
-				</body>
-			<html>";
+			$notificationUrl = SettingsManager::getSetting("notifications","url");
+			$notificationSender = SettingsManager::getSetting("notifications","sender");
+			$templateFile = SettingsManager::getSetting("notifications","new-user")["template"];
+			$templateSubject = SettingsManager::getSetting("notifications","new-user")["subject"];
+			$templateTokens = SettingsManager::getSetting("notifications","new-user")["tokens"];
 
-			$apiKey = SettingsManager::getSetting("mailgun","acymkey");
-			$url = "https://api:key-{$apiKey}@api.mailgun.net/v3/antiguacharteryachtmeeting.com/messages";
+			$newAccountTemplate = file_get_contents(dirname(__FILE__)."/../../notifications/$templateFile");
+			preg_replace("/\{\{username\}\}/",$user->getUsername(),$newAccountTemplate);
+			preg_replace("/\{\{year\}\}/",date("Y"),$newAccountTemplate);
+
+			foreach($templateTokens as $token){
+				preg_replace("/\{\{$token\}\}/",$options[$token],$newAccountTemplate);
+			}
+
+			//Replace Template Tokens
+			$firstName = array_key_exists('first-name',$options)?$options['first-name']:$user->getUsername();
+			$lastName = array_key_exists('last-name',$options)?$options['last-name']:"";
+			$email = array_key_exists('email',$options)?$options['email']:"";
+			$recipient = "$firstName $lastName $email";
+
 			$payload = array(
-				"to"=>"{$options['first-name']} {$options['last-name']} <{$options['email']}>",
-				"from"=> "Antigua Charter Yacht Meeting <noreply@antiguacharteryachtmeeting.com>",
-				"subject"=>"Your new ACYM Account has been created",
-				"html"=> $template
+				"to"=>$recipient,
+				"from"=> $notificationSender,
+				"subject"=>$templateSubject,
+				"html"=> $newAccountTemplate
 			);
 
 			$header = array(
 				'Content-Type: application/x-www-form-urlencoded'
 			);
 
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL,$url);
+			$ch = curl_init($notificationUrl);
 			curl_setopt($ch, CURLOPT_HTTPHEADER,$header);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER,TRUE);
 			curl_setopt($ch, CURLOPT_POST,true);
 			curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($payload));
 			curl_setopt($ch, CURLOPT_FAILONERROR,false);
-			$body = json_decode(curl_exec($ch),true);
+			json_decode(curl_exec($ch),true);
+			curl_close($ch);
 		}
 	}
 ?>

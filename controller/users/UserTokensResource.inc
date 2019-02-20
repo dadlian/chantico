@@ -1,4 +1,8 @@
 <?php
+	use Wadapi\Http\RequestHandler;
+	use Wadapi\Http\ResponseHandler;
+	use Wadapi\Persistence\SQLGateway;
+
 	class UserTokensResource extends UserController{
 		protected function isInvalid(){
 			return array();
@@ -15,49 +19,37 @@
 
 		protected function get(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 
-			$sqlGateway = new SQLGateway();
 			$authentication = RequestHandler::getAuthorisation();
 			$username = $authentication["key"];
 			$password = $authentication["secret"];
 
 			//Retrieve user access resource
-			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			if($api->isSecure()){
-				$request->setTransport("ssl");
-				$request->setPort(443);
-			}
-
-			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH).$user->getAccessEndpoint());
-			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-			$request->setContentType("application/json");
-			$response = $request->get();
-
-			if($response->getStatusCode() != 200){
+			$response = $this->sendInstanceGet($user->getAccessEndpoint());
+			if($response['code'] != 200){
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 
-			$access = json_decode($response->getBody(),true);
+			$access = $response['body'];
 			if(!$user->isMultiSession() && $user->getExpires() <= time()){
 				//Refresh the user token
 				$accessEndpoint = parse_url($access["tokens"],PHP_URL_PATH);
-				$request->setEndpoint($accessEndpoint);
-				$request->authorise($this->decrypt($user->getAccessKey(),$password),$this->decrypt($user->getRefreshSecret(),$password));
-				$request->setBody(json_encode(array("lifetime"=>SettingsManager::getSetting("options","lifetime"))));
-				$response = $request->post();
-				if($response->getStatusCode() == 201){
-					$body = json_decode($response->getBody(),true);
-					$accessKey = $body["key"];
-					$accessSecret = $body["secret"];
-					$refreshSecret = $body["refresh"];
-					$lifetime = $body["lifetime"];
+				$accessKey = $this->decrypt($user->getAccessKey(),$password);
+				$refreshSecret = $this->decrypt($user->getAccessKey(),$password);
+				$response = $this->sendInstancePost($accessEndpoint,array(),$accessKey,$refreshSecret);
+				if($response['code'] == 201){
+					$accessKey = $response["body"]["key"];
+					$accessSecret = $response["body"]["secret"];
+					$refreshSecret = $response["body"]["refresh"];
+					$lifetime = $response["body"]["lifetime"];
 
 					//Save User to Chantico
 					$user->setAccessKey($this->encrypt($accessKey,$password));
 					$user->setAccessSecret($this->encrypt($accessSecret,$password));
 					$user->setRefreshSecret($this->encrypt($refreshSecret,$password));
 					$user->setExpires(time()+$lifetime);
+
+					$sqlGateway = new SQLGateway();
 					$sqlGateway->save($user);
 				}
 			}

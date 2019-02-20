@@ -1,4 +1,12 @@
 <?php
+	use Wadapi\Http\RequestHandler;
+	use Wadapi\Http\ResponseHandler;
+	use Wadapi\System\SettingsManager;
+	use Wadapi\Persistence\DatabaseAdministrator;
+	use Wadapi\Persistence\SQLGateway;
+	use Wadapi\Persistence\Searcher;
+	use Wadapi\Persistence\Sorter;
+
 	abstract class UserController extends ChanticoController{
 		public function execute(){
 			if(RequestHandler::getAuthenticatedToken()->getRole() == "user"){
@@ -63,92 +71,87 @@
 		}
 
 		protected function getRecordCount(){
-			$count = 0;
+			$whereParams = array();
 			$usernames = RequestHandler::getQueryParameter("usernames");
 			$options = RequestHandler::getQueryParameter("options");
 			$access = RequestHandler::getQueryParameter("access");
 
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-			$apiCheck = "api = {$api->getId()}";
-			if($usernames){
-				$patterns = array();
-				foreach(explode(",",$usernames) as $username){
-					$username = strtolower($username);
-					$patterns[] = "username LIKE '$username'";
-				}
-				$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck AND (".implode(" OR ",$patterns).")");
-			}else if($options){
-				$optionsList = explode(",",$options);
-				$optionsQueryParts = array();
-				foreach($optionsList as $option){
-					$parameters = preg_split("/~/",$option);
-					$jsonParameter = addslashes(json_encode($parameters[1]));
-					$optionsQueryParts[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
-				}
-
-				$optionsQuery = implode(" OR ",$optionsQueryParts);
-				$query = "SELECT COUNT(A.id) as user FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess WHERE ($optionsQuery) AND A.$apiCheck";
-				$countResult = DatabaseAdministrator::execute($query);
-			}else if($access){
-				$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE accessEndpoint = '$access' AND $apiCheck");
-			}else{
-				$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess WHERE $apiCheck");
+			$usernameConditions = array();
+			foreach(explode(",",$usernames) as $username){
+				$username = strtolower($username);
+				$usernameConditions[] = "username LIKE '$username'";
 			}
 
+			if($usernameConditions){
+				$whereParams[] =  "(".implode(" OR ",$usernameConditions).")";
+			}
+
+			$optionsList = explode(",",$options);
+			$optionConditions = array();
+			foreach($optionsList as $option){
+				$parameters = preg_split("/~/",$option);
+				$jsonParameter = addslashes(json_encode($parameters[1]));
+				$optionConditions[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
+			}
+
+			if($optionConditions){
+				$whereParams[] = "(".implode(" OR ",$optionConditions).")";
+			}
+
+			if($access){
+				$whereParams[] = "accessEndpoint = '$access'";
+			}
+
+			$whereClause = $whereParams?("WHERE ".implode('AND',$whereParams)):"";
+			$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess $whereClause");
 			$count = $countResult[0]["user"];
 
 			return $count;
 		}
 
 		protected function buildPageEntries($start,$count){
-			$payload = array();
-
-			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
+			$whereParams = array();
 			$usernames = RequestHandler::getQueryParameter("usernames");
 			$options = RequestHandler::getQueryParameter("options");
 			$access = RequestHandler::getQueryParameter("access");
 
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-			$apiCheck = "api = {$api->getId()}";
-			if($usernames){
-				$patterns = array();
-				foreach(explode(",",$usernames) as $username){
-					$username = strtolower($username);
-					$patterns[] = "username LIKE '$username'";
-				}
-
-				$results = DatabaseAdministrator::execute("SELECT id FROM ManagedAccess WHERE $apiCheck AND (".implode(" OR ",$patterns).")");
-				$users = array();
-				foreach($results as $user){
-					$users[] = $user["id"];
-				}
-
-				$searcher->addCriterion("id",Criterion::EQUAL,$users);
-			}else if($options){
-				$optionsList = explode(",",$options);
-				$optionsQueryParts = array();
-				foreach($optionsList as $option){
-					$parameters = preg_split("/~/",$option);
-					$jsonParameter = addslashes(json_encode($parameters[1]));
-					$optionsQueryParts[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
-				}
-
-				$optionsQuery = implode(" OR ",$optionsQueryParts);
-				$results = DatabaseAdministrator::execute("SELECT A.id as id FROM ManagedAccess as A JOIN ManagedAccessOptions as B ON A.id = managedaccess WHERE ($optionsQuery) AND A.$apiCheck");
-
-				$users = array();
-				foreach($results as $user){
-					$users[] = $user["id"];
-				}
-
-				$searcher->addCriterion("id",Criterion::EQUAL,$users);
-			}else if($access){
-				$searcher->addCriterion("accessEndpoint",Criterion::EQUAL,$access);
+			$usernameConditions = array();
+			foreach(explode(",",$usernames) as $username){
+				$username = strtolower($username);
+				$usernameConditions[] = "username LIKE '$username'";
 			}
 
-			$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
-			foreach($sqlGateway->find("ManagedAccess",$searcher,new Sorter(),$count,$start,false) as $user){
+			if($usernameConditions){
+				$whereParams[] =  "(".implode(" OR ",$usernameConditions).")";
+			}
+
+			$optionsList = explode(",",$options);
+			$optionConditions = array();
+			foreach($optionsList as $option){
+				$parameters = preg_split("/~/",$option);
+				$jsonParameter = addslashes(json_encode($parameters[1]));
+				$optionConditions[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
+			}
+
+			if($optionConditions){
+				$whereParams[] = "(".implode(" OR ",$optionConditions).")";
+			}
+
+			if($access){
+				$whereParams[] = "accessEndpoint = '$access'";
+			}
+
+			$whereClause = $whereParams?("WHERE ".implode('AND',$whereParams)):"";
+			$results = DatabaseAdministrator::execute("SELECT id FROM ManagedAccess $whereClause");
+
+			$users = array();
+			foreach($results as $user){
+				$users[] = $user["id"];
+			}
+
+			$payload = array();
+			$sqlGateway = new SQLGateway();
+			foreach($sqlGateway->find("ManagedAccess",new Searcher(),new Sorter(),$count,$start,false) as $user){
 				$payload[] = $this->assemblePayload($user);
 			}
 
@@ -172,22 +175,11 @@
 				}
 			}
 
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			if(!$optionsInitialised){
-				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-				if($api->isSecure()){
-					$request->setTransport("ssl");
-					$request->setPort(443);
-				}
-
-				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-				$request->setEndpoint($user->getAccessEndpoint());
-				$response = $request->get();
-
+				$response = $this->sendInstanceGet($user->getAccessEndpoint());
 				$options = array();
-				if($response->getStatusCode() == "200"){
-					$responseBody = json_decode($response->getBody(),true);
-					foreach($responseBody as $option => $value){
+				if($response['code'] == "200"){
+					foreach($response['body'] as $option => $value){
 						if(!in_array($option,array("self","tokens","active-token"))){
 							$options[$option] = json_encode($value);
 						}
@@ -220,9 +212,9 @@
 				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),
 				"role"=>$realRole,
-				"access"=>"{$api->getRoot()}{$user->getAccessEndpoint()}",
-				"tokens"=>"{$user->getURI()}/tokens",
+				"access"=>"$instanceUrl{$user->getAccessEndpoint()}",
 				"options"=>$options,
+				"tokens"=>"{$user->getURI()}/tokens",
 				"resets"=>"{$user->getURI()}/resets",
 				"recoveries"=>"{$user->getURI()}/recoveries"
 			);
@@ -231,7 +223,7 @@
 		}
 
 		protected function encrypt($data,$key){
-			$key = md5(password_hash($key,PASSWORD_DEFAULT,array("salt"=>SettingsManager::getSetting("options","salt"))));
+			$key = md5(password_hash($key,PASSWORD_DEFAULT,array("salt"=>SettingsManager::getSetting("encryption","salt"))));
 			$key = pack('H*',$key);
 
 			# create a random IV to use with CBC encoding
@@ -244,7 +236,7 @@
 		}
 
 		protected function decrypt($data,$key){
-			$key = md5(password_hash($key,PASSWORD_DEFAULT,array("salt"=>SettingsManager::getSetting("options","salt"))));
+			$key = md5(password_hash($key,PASSWORD_DEFAULT,array("salt"=>SettingsManager::getSetting("encryption","salt"))));
 			$key = pack('H*',$key);
 			$ciphertext = base64_decode($data);
 

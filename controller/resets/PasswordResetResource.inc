@@ -1,8 +1,13 @@
 <?php
+	use Wadapi\Http\ResponseHandler;
+	use Wadapi\Persistence\SQLGateway;
+	use Wadapi\Persistence\Searcher;
+	use Wadapi\Persistence\Criterion;
+	use Wadapi\System\SettingsManager;
+
 	class PasswordResetResource extends PasswordResetController{
 		protected function get(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			$reset = $this->getResourceObject("PasswordReset","id",$this->viewFromArguments("reset"));
 
 			$payload = $this->assemblePayload($reset);
@@ -11,7 +16,6 @@
 
 		protected function put(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 			$reset = $this->getResourceObject("PasswordReset","id",$this->viewFromArguments("reset"));
 
 			if(in_array($reset->getStatus(),array("reset","cancelled"))){
@@ -47,20 +51,10 @@
 			}
 
 			if(!$optionsInitialised){
-				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-				if($api->isSecure()){
-					$request->setTransport("ssl");
-					$request->setPort(443);
-				}
+				$response = $this->sendInstanceGet($user->getAccessEndpoint());
+				$role = $response["body"]["role"];
 
-				$request->setEndpoint($user->getAccessEndpoint());
-				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-				$request->setContentType("application/json");
-				$response = $request->get();
-				$responseBody = json_decode($response->getBody(),true);
-				$role = $responseBody["role"];
-
-				foreach($responseBody as $option => $value){
+				foreach($response["body"] as $option => $value){
 					if(!in_array($option,array("self","tokens","active-token","role"))){
 						$options[$option] = $value;
 					}
@@ -68,51 +62,36 @@
 			}
 
 			//Echo old access endpoint
-			$options['predecessor'] = $api->getRoot().$user->getAccessEndpoint();
+			$instanceUrl = SettingsManager::getSetting("wadapi-instance","url");
+			$options['predecessor'] = $instanceUrl.$user->getAccessEndpoint();
 
 			//Create Fresh Access Tokens
-			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			if($api->isSecure()){
-				$request->setTransport("ssl");
-				$request->setPort(443);
-			}
-
-			$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
-			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-			$request->setContentType("application/json");
 			$payload = json_encode(array_merge(array("role"=>$role),$options));
-			$request->setBody($payload);
-			$response = $request->post();
-			$body = json_decode($response->getBody(),true);
+			$response = $this->sendInstancePost("/access",$payload);
 
-			if($response->getStatusCode() == 400){
-				ResponseHandler::bad(str_replace("arguments","directives",$body["message"]));
-			}else if($response->getStatusCode() != 201){
+			if($response['code'] == 400){
+				ResponseHandler::bad(str_replace("arguments","directives",$response['body']["message"]));
+			}else if($response['code'] != 201){
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 
-			$accessEndpoint = parse_url($body["self"],PHP_URL_PATH);
-			$tokensEndpoint = parse_url($body["tokens"],PHP_URL_PATH);
-			$accessKey = $body["active-token"]["key"];
-			$refreshSecret = $body["active-token"]["refresh"];
+			$accessEndpoint = parse_url($response['body']["self"],PHP_URL_PATH);
+			$tokensEndpoint = parse_url($response['body']["tokens"],PHP_URL_PATH);
+			$accessKey = $response['body']["active-token"]["key"];
+			$refreshSecret = $response['body']["active-token"]["refresh"];
 
 			//Refresh Access Token
-			$request->setEndpoint($tokensEndpoint);
-			$request->authorise($accessKey,$refreshSecret);
-			$request->setBody(json_encode(array("lifetime"=>SettingsManager::getSetting("options","lifetime"))));
-			$response = $request->post();
+			$response = $this->sendInstancePost($tokensEndpoint,array(),$accessKey,$refreshSecret);
 
-			if($response->getStatusCode() != 201){
-				var_dump($response->getBody()); exit;
+			if($response['code'] != 201){
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 
 			//Encrypt and save new access tokens
-			$body = json_decode($response->getBody(),true);
-			$accessKey = $body["key"];
-			$accessSecret = $body["secret"];
-			$refreshSecret = $body["refresh"];
-			$lifetime = $body["lifetime"];
+			$accessKey = $response["body"]["key"];
+			$accessSecret = $response["body"]["secret"];
+			$refreshSecret = $response["body"]["refresh"];
+			$lifetime = $response["body"]["lifetime"];
 
 			//Save user changes to Chantico
 			$authentication = $this->getFromContent("authentication");
@@ -122,7 +101,6 @@
 			$user->setRefreshSecret($this->encrypt($refreshSecret,$authentication));
 			$user->setAccessEndpoint($accessEndpoint);
 			$user->setExpires(time()+$lifetime);
-
 			$user->setOptions($user->getOptions());
 
 			$sqlGateway = new SQLGateway();
@@ -153,7 +131,7 @@
 		}
 
 		protected function encrypt($data,$key){
-			$key = md5(password_hash($key,PASSWORD_DEFAULT,array("salt"=>SettingsManager::getSetting("options","salt"))));
+			$key = md5(password_hash($key,PASSWORD_DEFAULT,array("salt"=>SettingsManager::getSetting("encryption","salt"))));
 			$key = pack('H*',$key);
 
 			# create a random IV to use with CBC encoding

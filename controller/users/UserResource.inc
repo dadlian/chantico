@@ -1,4 +1,13 @@
 <?php
+	use Wadapi\Http\RequestHandler;
+	use Wadapi\Http\ResponseHandler;
+	use Wadapi\System\SettingsManager;
+	use Wadapi\Persistence\SQLGateway;
+	use Wadapi\Persistence\Searcher;
+	use Wadapi\Persistence\Criterion;
+	use Wadapi\Persistence\CryptKeeper;
+	use Wadapi\Persistence\Photographer;
+
 	class UserResource extends UserController{
 		protected function get(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
@@ -18,10 +27,8 @@
 			//Check whether username already exists
 			$user->setUsername($normalisedUsername);
 			if($user->isDirty('username')){
-				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
 				$searcher = new Searcher();
 				$searcher->addCriterion("username",Criterion::EQUAL,$normalisedUsername);
-				$searcher->addCriterion("api",Criterion::EQUAL,$api->getId());
 				$searcher->addCriterion("id",Criterion::NOT_EQUAL,$user->getId());
 				if($sqlGateway->findUnique("ManagedAccess",$searcher)){
 					ResponseHandler::conflict("A user identified by '{$this->getFromContent('username')}' already exists.");
@@ -38,84 +45,47 @@
 			}
 
 			if($user->isDirty("options")){
-				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-				if($api->isSecure()){
-					$request->setTransport("ssl");
-					$request->setPort(443);
-				}
-
-				$request->setEndpoint($user->getAccessEndpoint());
-				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-				$request->setContentType("application/json");
-				$request->assureConsistency();
 				$payload = json_encode($userOptions);
-				$request->setBody($payload);
-				$response = $request->put();
-				$body = json_decode($response->getBody(),true);
+				$this->sendInstancePut($user->getAccessEndpoint(),$payload);
 			}
 
 			//Update user password if necessary
 			$user->setAuthentication($authentication);
 			if($user->isDirty("authentication")){
-				$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
-
-				//Delete Old Access Tokens
-				$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-				if($api->isSecure()){
-					$request->setTransport("ssl");
-					$request->setPort(443);
-				}
-
-				$request->setEndpoint($user->getAccessEndpoint());
-				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-				$request->setContentType("application/json");
-				$request->assureConsistency();
-				$response = $request->delete();
+				$this->sendInstanceDelete($user->getAccessEndpoint(),$payload);
 
 				//Create Fresh Access Tokens
-				$request->setEndpoint(parse_url($api->getRoot(),PHP_URL_PATH)."/access");
-				$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-				$request->setContentType("application/json");
-				$payload = json_encode($userOptions);
+				$payload = $userOptions;
+				$response = $this->sendInstancePost("access",$payload);
 
-				$request->setBody($payload);
-				$response = $request->post();
-				$body = json_decode($response->getBody(),true);
-
-				if($response->getStatusCode() == 400){
-					ResponseHandler::bad(str_replace("arguments","directives",$body["message"]));
-				}else if($response->getStatusCode() != 201){
+				if($response['code'] == 400){
+					ResponseHandler::bad(str_replace("arguments","directives",$response["body"]["message"]));
+				}else if($response['code'] != 201){
 					ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 				}
 
-				$responseBody = json_decode($response->getBody(),true);
 				foreach($responseBody as $option => $value){
 					if(!in_array($option,array("self","tokens","active-token","role"))){
 						$user->insertToOptions($option,$value);
 					}
 				}
 
-				$accessEndpoint = parse_url($body["self"],PHP_URL_PATH);
-				$tokensEndpoint = parse_url($body["tokens"],PHP_URL_PATH);
-				$accessKey = $body["active-token"]["key"];
-				$refreshSecret = $body["active-token"]["refresh"];
+				$accessEndpoint = parse_url($response['body']["self"],PHP_URL_PATH);
+				$tokensEndpoint = parse_url($response['body']["tokens"],PHP_URL_PATH);
+				$accessKey = $response['body']["active-token"]["key"];
+				$refreshSecret = $response['body']["active-token"]["refresh"];
 
 				//Refresh Access Token
-				$request->setEndpoint($tokensEndpoint);
-				$request->authorise($accessKey,$refreshSecret);
-				$request->setBody(json_encode(array("lifetime"=>SettingsManager::getSetting("options","lifetime"))));
-				$response = $request->post();
+				$response = $this->sendInstancePost($tokensEndpoint,array(),$accessKey,$refreshSecret);
 
-				if($response->getStatusCode() != 201){
+				if($response['code'] != 201){
 					ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 				}
 
-				$body = json_decode($response->getBody(),true);
-				$accessKey = $body["key"];
-				$accessSecret = $body["secret"];
-				$refreshSecret = $body["refresh"];
-				$lifetime = $body["lifetime"];
+				$accessKey = $response['body']["key"];
+				$accessSecret = $response['body']["secret"];
+				$refreshSecret = $response['body']["refresh"];
+				$lifetime = $response['body']["lifetime"];
 
 				$user->setAccessKey($this->encrypt($accessKey,$this->getFromContent("authentication")));
 				$user->setAccessSecret($this->encrypt($accessSecret,$this->getFromContent("authentication")));
@@ -144,21 +114,9 @@
 
 		protected function delete(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
-			$api = $this->getResourceObject("API","id",$this->viewFromArguments("api"));
+			$response = $this->sendInstanceDelete($user->getAccessEndpoint());
 
-			$request = new WadapiRequest(parse_url($api->getRoot(),PHP_URL_HOST));
-			if($api->isSecure()){
-				$request->setTransport("ssl");
-				$request->setPort(443);
-			}
-
-			$request->setEndpoint($user->getAccessEndpoint());
-			$request->authorise($api->getAccessKey(),$api->getAccessSecret());
-			$request->setContentType("application/json");
-			$request->assureConsistency();
-			$response = $request->delete();
-
-			if($response->getStatusCode() == 200){
+			if($response['code'] == 200){
 				CryptKeeper::bury($user);
 
 				//Delete APIToken associated with user

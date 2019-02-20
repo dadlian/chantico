@@ -1,4 +1,6 @@
 <?php
+	use Wadapi\Http\Resource;
+
 	class ManagedAccess extends Resource{
 		/** @WadapiString */
 		protected $username;
@@ -27,18 +29,15 @@
 		/** @Collection(type=@WadapiObject(class='Renewal')) */
 		protected $renewals;
 
-		/** @WadapiString */
-		protected $api;
-
 		/** @Boolean(default=false) */
 		protected $multiSession;
 
 		protected function getURI(){
-			return $this->getBaseUri()."/apis/{$this->getApi()}/users/{$this->getId()}";
+			return $this->getBaseUri()."/users/{$this->getId()}";
 		}
 
 		protected function getURITemplate(){
-			return $this->getBaseUri()."/apis/{api_id}/users/{user_id}";
+			return $this->getBaseUri()."/users/{user_id}";
 		}
 
 		protected function getETag(){
@@ -49,7 +48,6 @@
 			$eTag .= $this->getRefreshSecret();
 			$eTag .= $this->getAccessEndpoint();
 			$eTag .= $this->getExpires();
-			$eTag .= $this->getApi();
 
 			return md5($this->getModified().$eTag);
 		}

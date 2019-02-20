@@ -1,4 +1,9 @@
 <?php
+	use Wadapi\Http\ResponseHandler;
+	use Wadapi\System\SettingsManager;
+	use Wadapi\Persistence\SQLGateway;;
+	use Wadapi\Persistence\Searcher;
+
 	class UsernameRecoveryCollection extends UsernameRecoveryController{
 		protected function post(){
 			$sqlGateway = new SQLGateway();
@@ -10,64 +15,39 @@
 			$recovery->setUser($this->viewFromArguments("user"));
 			$sqlGateway->save($recovery);
 
-
 			//Send Confirmation Code via Email
-			$template = "<html>
-					<head>
-						<title>Username Recovery</title>
-					</head>
-					<body>
-						<table width='500px' style='font-family:Arial, Helvetica, sans-serif;font-size:13px;'>
-							<tr>
-								<td>
-									<img src='http://nkengedrew.com/client/ticketing/tickeTingLogo.jpg' alt='TickeTing logo' style='border:none;'>
-									<h3>Dear ".$this->getFromContent("recipient").",</h3>
-								</td>
-							</tr>
-							<tr>
-								<td>
-									<p>
-										You requested your TickeTing username be sent to your registered email address. Please find it included below.
-									</p>
-									<h3>Your username:</h3>
-									<h1 style='color:#2072b8;'>{$user->getUsername()}</h1>
-									<p>
-										<span>Sincerely,<br></span>
-										<span style='color:#2072b8;'><strong>The TickeTing Team</strong></span>
-									</p>
-								</td>
-							</tr>
-							<tr>
-								<td height='20px'>
-								</td>
-							</tr>
-							<tr>
-								<td bgcolor='#2072b8' style='color:#ffffff;padding:10px;font-size:12px;text-align:center;' >
-									&copy; ".date("Y")." mCAT Innovations, Antigua, W.I.
-								</td>
-							</tr>
-						</table>
-					</body>
-				<html>";
+			$notificationUrl = SettingsManager::getSetting("notifications","url");
+			$notificationSender = SettingsManager::getSetting("notifications","sender");
+			$templateFile = SettingsManager::getSetting("notifications","username-recovery")["template"];
+			$templateSubject = SettingsManager::getSetting("notifications","username-recovery")["subject"];
 
-			$apiKey = SettingsManager::getSetting("mailgun","ticketingkey");
-			$url = "https://api:key-{$apiKey}@api.mailgun.net/v3/ticketingevents.co/messages";
+			//Replace Template Tokens
+			$usernameRecoveryTemplate = file_get_contents(dirname(__FILE__)."/../../notifications/$templateFile");
+			preg_replace("/\{\{recipient\}\}/",$this->getFromContent("recipient"),$usernameRecoveryTemplate);
+			preg_replace("/\{\{username\}\}/",$user->getUsername(),$usernameRecoveryTemplate);
+			preg_replace("/\{\{year\}\}/",date("Y"),$usernameRecoveryTemplate);
+
+			$recipient = "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>";
+
 			$payload = array(
-				"to"=> "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>",
-				"from"=> "The TickeTing Team <noreply@ticketingevents.co>",
-				"subject"=>"Your TickeTing Username",
-				"html"=> $template
+				"to"=>$recipient,
+				"from"=> $notificationSender,
+				"subject"=>$templateSubject,
+				"html"=> $usernameRecoveryTemplate
 			);
 
-			$options = array(
-				'http' => array(
-					'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-					'method'  => 'POST',
-					'content' => http_build_query($payload),
-				)
+			$header = array(
+				'Content-Type: application/x-www-form-urlencoded'
 			);
-			$context  = stream_context_create($options);
-			$result = file_get_contents($url, false, $context);
+
+			$ch = curl_init($notificationUrl);
+			curl_setopt($ch, CURLOPT_HTTPHEADER,$header);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER,TRUE);
+			curl_setopt($ch, CURLOPT_POST,true);
+			curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($payload));
+			curl_setopt($ch, CURLOPT_FAILONERROR,false);
+			json_decode(curl_exec($ch),true);
+			curl_close($ch);
 
 			$payload = $this->assemblePayload($recovery);
 			ResponseHandler::created($payload,$recovery->getURI());
