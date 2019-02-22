@@ -26,11 +26,14 @@
 		/** @Collection(type=@Text) */
 		protected $options;
 
-		/** @Collection(type=@WadapiObject(class='Renewal')) */
-		protected $renewals;
-
 		/** @Boolean(default=false) */
 		protected $multiSession;
+
+		/** @Collection(type=@WadapiObject(class='PasswordReset')) */
+		protected $passwordResets;
+
+		/** @Collection(type=@WadapiObject(class='UsernameRecovery')) */
+		protected $usernameRecoveries;
 
 		protected function getURI(){
 			return $this->getBaseUri()."/users/{$this->getId()}";

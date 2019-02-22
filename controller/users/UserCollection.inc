@@ -57,6 +57,7 @@
 			$user = new ManagedAccess();
 			$user->setUsername($normalisedUsername);
 			$user->setAuthentication(md5($this->getFromContent("authentication")));
+			$user->setMultiSession($this->getFromContent("multi-session",false));
 			$user->setAccessKey($this->encrypt($accessKey,$this->getFromContent("authentication")));
 			$user->setAccessSecret($this->encrypt($accessSecret,$this->getFromContent("authentication")));
 			$user->setRefreshSecret($this->encrypt($refreshSecret,$this->getFromContent("authentication")));

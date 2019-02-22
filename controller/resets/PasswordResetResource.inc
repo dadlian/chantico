@@ -27,50 +27,34 @@
 			}
 
 			//Find User Options
-			$role = json_decode($user->viewFromOptions("role"));
-			if(json_last_error() != JSON_ERROR_NONE){
-				$role = $user->viewFromOptions("role");
-			}
-
-			$options = array();
+			$userOptions = array();
 			foreach($user->getOptions() as $option => $value){
-				if($option != "role"){
-					$options[$option] = json_decode($value);
-					if(json_last_error() != JSON_ERROR_NONE){
-						$options[$option] = $value;
-					}
+				$userOptions[$option] = json_decode($value);
+				if(json_last_error() != JSON_ERROR_NONE){
+					$userOptions[$option] = $value;
 				}
 			}
-
-			$optionsInitialised = sizeof($options) > 0;
-			foreach($options as $option){
-				if(!$option){
-					$optionsInitialised = false;
-					break;
-				}
-			}
-
-			if(!$optionsInitialised){
-				$response = $this->sendInstanceGet($user->getAccessEndpoint());
-				$options = $response["body"];
-			}
-
-			//Echo old access endpoint
-			$instanceUrl = SettingsManager::getSetting("wadapi-instance","url");
-			$options['invalidated-token'] = $instanceUrl.$user->getAccessEndpoint();
 
 			//Create Fresh Access Tokens
-			$payload = array_merge(array("role"=>$role),$options);
-			$response = $this->sendInstancePost("/access",$payload);
+			$payload = $userOptions;
+			$instanceUrl = SettingsManager::getSetting("wadapi-instance","url");
+
+			$payload['invalidated-token'] = $instanceUrl.$user->getAccessEndpoint();
+			$response = $this->sendInstancePost("access",$payload);
 
 			if($response['code'] == 400){
-				ResponseHandler::bad(str_replace("arguments","directives",$response['body']["message"]));
+				ResponseHandler::bad(str_replace("arguments","directives",$response["body"]["message"]));
 			}else if($response['code'] != 201){
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 
-			$accessEndpoint = parse_url($response['body']["self"],PHP_URL_PATH);
-			$tokensEndpoint = parse_url($response['body']["tokens"],PHP_URL_PATH);
+			//Delete old token
+			$this->sendInstanceDelete($user->getAccessEndpoint());foreach($response['body']['profile'] as $option => $value){
+				$user->insertToOptions($option,json_encode($value));
+			}
+
+			$accessEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($instanceUrl))."/","",$response["body"]["self"]);
+			$tokensEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($instanceUrl))."/","",$response["body"]["tokens"]);
 			$accessKey = $response['body']["active-token"]["key"];
 			$refreshSecret = $response['body']["active-token"]["refresh"];
 
@@ -81,21 +65,17 @@
 				ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 			}
 
-			//Encrypt and save new access tokens
-			$accessKey = $response["body"]["key"];
-			$accessSecret = $response["body"]["secret"];
-			$refreshSecret = $response["body"]["refresh"];
-			$lifetime = $response["body"]["lifetime"];
+			$accessKey = $response['body']["key"];
+			$accessSecret = $response['body']["secret"];
+			$refreshSecret = $response['body']["refresh"];
+			$lifetime = $response['body']["lifetime"];
 
-			//Save user changes to Chantico
-			$authentication = $this->getFromContent("authentication");
-			$user->setAuthentication(md5($authentication));
-			$user->setAccessKey($this->encrypt($accessKey,$authentication));
-			$user->setAccessSecret($this->encrypt($accessSecret,$authentication));
-			$user->setRefreshSecret($this->encrypt($refreshSecret,$authentication));
+			$user->setAuthentication(md5($this->getFromContent("authentication")));
+			$user->setAccessKey($this->encrypt($accessKey,$this->getFromContent("authentication")));
+			$user->setAccessSecret($this->encrypt($accessSecret,$this->getFromContent("authentication")));
+			$user->setRefreshSecret($this->encrypt($refreshSecret,$this->getFromContent("authentication")));
 			$user->setAccessEndpoint($accessEndpoint);
 			$user->setExpires(time()+$lifetime);
-			$user->setOptions($user->getOptions());
 
 			$sqlGateway = new SQLGateway();
 			$sqlGateway->save($user);

@@ -1,19 +1,20 @@
 <?php
 	use Wadapi\Http\ResponseHandler;
 	use Wadapi\System\SettingsManager;
-	use Wadapi\Persistence\SQLGateway;;
-	use Wadapi\Persistence\Searcher;
+	use Wadapi\Persistence\SQLGateway;
 
 	class UsernameRecoveryCollection extends UsernameRecoveryController{
 		protected function post(){
-			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 
 			//Create New Username Recovery Request
+			$sqlGateway = new SQLGateway();
+
 			$recovery = new UsernameRecovery();
-			$recovery->setUser($this->viewFromArguments("user"));
 			$sqlGateway->save($recovery);
+
+			$user->appendToUsernameRecoveries($recovery);
+			$sqlGateway->save($user);
 
 			//Send Confirmation Code via Email
 			$notificationUrl = SettingsManager::getSetting("notifications","url");
@@ -21,14 +22,44 @@
 			$templateFile = SettingsManager::getSetting("notifications","username-recovery")["template"];
 			$templateSubject = SettingsManager::getSetting("notifications","username-recovery")["subject"];
 
+			//Load User Information if available
+			$userFirstName = "";
+			if($user->viewFromOptions("first-name")){
+				$userFirstName = json_decode($user->viewFromOptions("first-name"));
+				if(json_last_error() != JSON_ERROR_NONE){
+					$userFirstName = $user->viewFromOptions("first-name");
+				}
+			}
+
+			$userLastName = "";
+			if($user->viewFromOptions("last-name")){
+				$userLastName = json_decode($user->viewFromOptions("last-name"));
+				if(json_last_error() != JSON_ERROR_NONE){
+					$userLastName = $user->viewFromOptions("last-name");
+				}
+			}
+
+			$userEmail = "";
+			if($user->viewFromOptions("email")){
+				$userEmail = json_decode($user->viewFromOptions("email"));
+				if(json_last_error() != JSON_ERROR_NONE){
+					$userEmail = $user->viewFromOptions("email");
+				}
+			}
+
+			$recipientName = "$userFirstName $userLastName";
+
 			if($templateFile){
 				//Replace Template Tokens
 				$usernameRecoveryTemplate = file_get_contents(dirname(__FILE__)."/../../notifications/$templateFile");
-				$usernameRecoveryTemplate = preg_replace("/\{\{recipient\}\}/",$this->getFromContent("recipient"),$usernameRecoveryTemplate);
+				$usernameRecoveryTemplate = preg_replace("/\{\{first-name\}\}/",$userFirstName,$usernameRecoveryTemplate);
+				$usernameRecoveryTemplate = preg_replace("/\{\{last-name\}\}/",$userLastName,$usernameRecoveryTemplate);
+				$usernameRecoveryTemplate = preg_replace("/\{\{email\}\}/",$userEmail,$usernameRecoveryTemplate);
+				$usernameRecoveryTemplate = preg_replace("/\{\{recipient\}\}/",$recipientName,$usernameRecoveryTemplate);
 				$usernameRecoveryTemplate = preg_replace("/\{\{username\}\}/",$user->getUsername(),$usernameRecoveryTemplate);
 				$usernameRecoveryTemplate = preg_replace("/\{\{year\}\}/",date("Y"),$usernameRecoveryTemplate);
 
-				$recipient = "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>";
+				$recipient = "$recipientName <$userEmail>";
 
 				$payload = array(
 					"to"=>$recipient,

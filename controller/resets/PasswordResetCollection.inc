@@ -1,36 +1,27 @@
 <?php
 	use Wadapi\Http\ResponseHandler;
-	use Wadapi\Persistence\DatabaseAdministrator;
 	use Wadapi\Persistence\SQLGateway;
-	use Wadapi\Persistence\Searcher;
-	use Wadapi\Persistence\Criterion;
 	use Wadapi\System\SettingsManager;
 
 	class PasswordResetCollection extends PasswordResetController{
 		protected function post(){
-			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
 
-			//Close any open reset requests
-			$searcher->addCriterion("status",Criterion::EQUAL,"requested");
-			$searcher->addCriterion("user",Criterion::EQUAL,$this->viewFromArguments("user"));
-			$openResets = array();
-			foreach($sqlGateway->find("PasswordReset",$searcher) as $openReset){
-				$openReset->setStatus("cancelled");
-				$openResets[] = $openReset;
+			//Cancel previously requested password resets
+			foreach($user->getPasswordResets() as $passwordReset){
+				if($passwordReset->getStatus() == "requested"){
+					$passwordReset->setStatus("cancelled");
+				}
 			}
-			$sqlGateway->save($openResets);
 
 			//Create New Password Reset Request
 			$reset = new PasswordReset();
-			$reset->setUser($this->viewFromArguments("user"));
 			$reset->setCode(rand(100000,999999));
 			$reset->setStatus("requested");
-			$sqlGateway->save($reset);
+			$user->appendToPasswordResets($reset);
 
-			$searcher->clearCriteria();
-			$searcher->addCriterion("id",Criterion::EQUAL,$reset->getUser());
-			$managedAccess = $sqlGateway->findUnique("ManagedAccess",$searcher);
+			$sqlGateway = new SQLGateway();
+			$sqlGateway->save($user);
 
 			//Send Confirmation Code via Email
 			$notificationUrl = SettingsManager::getSetting("notifications","url");
@@ -38,14 +29,44 @@
 			$templateFile = SettingsManager::getSetting("notifications","password-reset")["template"];
 			$templateSubject = SettingsManager::getSetting("notifications","password-reset")["subject"];
 
-			if($templateFile){
+			//Load User Information if available
+			$userFirstName = "";
+			if($user->viewFromOptions("first-name")){
+				$userFirstName = json_decode($user->viewFromOptions("first-name"));
+				if(json_last_error() != JSON_ERROR_NONE){
+					$userFirstName = $user->viewFromOptions("first-name");
+				}
+			}
+
+			$userLastName = "";
+			if($user->viewFromOptions("last-name")){
+				$userLastName = json_decode($user->viewFromOptions("last-name"));
+				if(json_last_error() != JSON_ERROR_NONE){
+					$userLastName = $user->viewFromOptions("last-name");
+				}
+			}
+
+			$userEmail = "";
+			if($user->viewFromOptions("email")){
+				$userEmail = json_decode($user->viewFromOptions("email"));
+				if(json_last_error() != JSON_ERROR_NONE){
+					$userEmail = $user->viewFromOptions("email");
+				}
+			}
+
+			$recipientName = "$userFirstName $userLastName";
+
+			if($templateFile && $userEmail){
 				//Replace Template Tokens
 				$passwordResetTemplate = file_get_contents(dirname(__FILE__)."/../../notifications/$templateFile");
-				$passwordResetTemplate = preg_replace("/\{\{recipient\}\}/",$this->getFromContent("recipient"),$passwordResetTemplate);
+				$passwordResetTemplate = preg_replace("/\{\{first-name\}\}/",$userFirstName,$passwordResetTemplate);
+				$passwordResetTemplate = preg_replace("/\{\{last-name\}\}/",$userLastName,$passwordResetTemplate);
+				$passwordResetTemplate = preg_replace("/\{\{email\}\}/",$userEmail,$passwordResetTemplate);
+				$passwordResetTemplate = preg_replace("/\{\{recipient\}\}/",$recipientName,$passwordResetTemplate);
 				$passwordResetTemplate = preg_replace("/\{\{code\}\}/",$reset->getCode(),$passwordResetTemplate);
 				$passwordResetTemplate = preg_replace("/\{\{year\}\}/",date("Y"),$passwordResetTemplate);
 
-				$recipient = "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>";
+				$recipient = "$recipientName <$userEmail>";
 
 				$payload = array(
 					"to"=>$recipient,

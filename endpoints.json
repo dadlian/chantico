@@ -52,17 +52,6 @@
       "requirements":[]
     },
     {
-      "name":"User Renewals Collection",
-      "path":"users/@/renewals",
-      "controller":"UserRenewalsCollection",
-      "roles":{
-        "administrator":["read","write"],
-        "refresher":["write"]
-      },
-      "parameters":["user"],
-      "requirements":[]
-    },
-    {
       "name":"Password Resets Collection",
       "path":"users/@/resets",
       "controller":"PasswordResetCollection",
@@ -70,8 +59,8 @@
         "administrator":["read","write"],
         "resetter":["read","write"]
       },
-      "parameters":["api","user"],
-      "requirements":["email","recipient"]
+      "parameters":["user"],
+      "requirements":[]
     },
     {
       "name":"Password Reset Resource",
@@ -93,7 +82,7 @@
         "resetter":["read","write"]
       },
       "parameters":["user"],
-      "requirements":["email","recipient"]
+      "requirements":[]
     }
   ]
 }

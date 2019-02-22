@@ -37,6 +37,10 @@
 				$invalidArguments[] = "role";
 			}
 
+			if(!is_bool($this->getFromContent("multi-session",false))){
+				$invalidArguments[] = "multi-session";
+			}
+
 			if(!is_array($this->getFromContent("options",array()))){
 				$invalidArguments[] = "options";
 			}else{
@@ -222,6 +226,7 @@
 				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),
 				"role"=>$realRole,
+				"multi-session"=>$user->isMultiSession(),
 				"access"=>"$instanceUrl{$user->getAccessEndpoint()}",
 				"options"=>$options,
 				"tokens"=>"{$user->getURI()}/tokens",

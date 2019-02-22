@@ -1,10 +1,10 @@
 <?php
 	use Wadapi\Http\Resource;
+	use Wadapi\Persistence\SQLGateway;
+	use Wadapi\Persistence\Searcher;
+	use Wadapi\Persistence\Criterion;
 
 	class PasswordReset extends Resource{
-		/** @WadapiString */
-		protected $user;
-
 		/** @Integer */
 		protected $code;
 
@@ -12,7 +12,12 @@
 		protected $status;
 
 		protected function getURI(){
-			return $this->getBaseUri()."/users/{$this->getUser()}/resets/{$this->getId()}";
+			$sqlGateway = new SQLGateway();
+			$searcher = new Searcher();
+			$searcher->addCriterion("passwordResets",Criterion::INCLUDES,$this);
+			$user = $sqlGateway->findUnique("ManagedAccess",$searcher);
+
+			return $this->getBaseUri()."/users/{$user->getId()}/resets/{$this->getId()}";
 		}
 
 		protected function getURITemplate(){
@@ -20,8 +25,7 @@
 		}
 
 		protected function getETag(){
-			$eTag = $this->getUser();
-			$eTag.= $this->getCode();
+			$eTag = $this->getCode();
 			$eTag.= $this->getStatus();
 
 			return md5($this->getModified().$eTag);

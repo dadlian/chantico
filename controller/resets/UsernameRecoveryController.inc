@@ -8,17 +8,6 @@
 	abstract class UsernameRecoveryController extends ChanticoController{
 		protected function isInvalid(){
 			$invalidArguments = array();
-
-			$recipient = $this->getFromContent("recipient");
-			if($recipient && !is_string($recipient)){
-				$invalidArguments[] = "recipient";
-			}
-
-			$email = $this->getFromContent("email");
-			if($email && !filter_var($email,FILTER_VALIDATE_EMAIL)){
-				$invalidArguments[] = "email";
-			}
-
 			return $invalidArguments;
 		}
 
@@ -28,24 +17,24 @@
 		}
 
 		protected function getRecordCount(){
-			$count = 0;
-			$user = $this->viewFromArguments("user");
-			$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as recovery FROM UsernameRecovery WHERE user = $user");
-			$count = $countResult[0]["recovery"];
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$count = sizeof($user->getUsernameRecoveries());
 
 			return $count;
 		}
 
 		protected function buildPageEntries($start,$count){
-			$payload = array();
-			$sqlGateway = new SQLGateway();
-			$searcher = new Searcher();
-			$searcher->addCriterion("user",Criterion::EQUAL,$this->viewFromArguments("user"));
-			$sorter = new Sorter();
-			$sorter->addCriterion("id",Criterion::DESCENDING);
+			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$recoveries = array();
+			foreach($user->getUsernameRecoveries() as $recovery){
+				$recoveries[$recovery->getId()] = $recovery;
+			}
 
-			foreach($sqlGateway->find("UsernameRecovery",$searcher,$sorter,$count,$start) as $reset){
-				$payload[] = $this->assemblePayload($reset);
+			krsort($recoveries);
+
+			$payload = array();
+			foreach(array_slice($recoveries,$start,$count) as $recovery){
+				$payload[] = $this->assemblePayload($recovery);
 			}
 
 			return $payload;

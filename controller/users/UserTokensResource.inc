@@ -2,6 +2,7 @@
 	use Wadapi\Http\RequestHandler;
 	use Wadapi\Http\ResponseHandler;
 	use Wadapi\Persistence\SQLGateway;
+	use Wadapi\System\SettingsManager;
 
 	class UserTokensResource extends UserController{
 		protected function isInvalid(){
@@ -19,6 +20,7 @@
 
 		protected function get(){
 			$user = $this->getResourceObject("ManagedAccess","id",$this->viewFromArguments("user"));
+			$instanceUrl = SettingsManager::getSetting("wadapi-instance","url");
 
 			$authentication = RequestHandler::getAuthorisation();
 			$username = $authentication["key"];
@@ -33,10 +35,12 @@
 			$access = $response['body'];
 			if(!$user->isMultiSession() && $user->getExpires() <= time()){
 				//Refresh the user token
-				$accessEndpoint = parse_url($access["tokens"],PHP_URL_PATH);
+				$tokensEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($instanceUrl))."/","",$access["tokens"]);
 				$accessKey = $this->decrypt($user->getAccessKey(),$password);
 				$refreshSecret = $this->decrypt($user->getAccessKey(),$password);
-				$response = $this->sendInstancePost($accessEndpoint,array(),$accessKey,$refreshSecret);
+				$payload = array('invalidated-token' => $instanceUrl.$user->getAccessEndpoint());
+				$response = $this->sendInstancePost($tokensEndpoint,$payload,$accessKey,$refreshSecret);
+
 				if($response['code'] == 201){
 					$accessKey = $response["body"]["key"];
 					$accessSecret = $response["body"]["secret"];
@@ -54,23 +58,11 @@
 				}
 			}
 
-			//We can re-enable token renewals if it ever becomes necessary. For now they have infinite lifespans, but
-			//are invalidated each time they are requested.
-			//Generate a new renewal stub
-			/*$warrant = Magistrate::issueWarrant("renew");
-
-			$stubToken = $warrant.$_SERVER['REMOTE_ADDR'];
-			$accessKey = $this->encrypt($this->decrypt($user->getAccessKey(),$password),$stubToken);
-			$refreshSecret = $this->encrypt($this->decrypt($user->getRefreshSecret(),$password),$stubToken);
-			$userPassword = $this->encrypt($password,$stubToken);
-			$stub = new RenewalStub(md5($stubToken),$accessKey,$refreshSecret,$userPassword);
-			$sqlGateway->save($stub);*/
-
 			$payload = array(
 				"self"=>$this->getBase()."/".RequestHandler::getRequestURI(),
 				"key"=>$this->decrypt($user->getAccessKey(),$password),
 				"secret"=>$this->decrypt($user->getAccessSecret(),$password),
-				"expiry"=>$user->getExpires()-time()
+				"expiry"=>$user->getExpires()?($user->getExpires()-time()):0
 			);
 
 			ResponseHandler::retrieved($payload,$this->getBase()."/".RequestHandler::getRequestURI(),$user->getModified(),$user->getETag());

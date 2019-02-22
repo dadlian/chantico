@@ -107,6 +107,7 @@
 				$sqlGateway->save($apiToken);
 			}
 
+			$user->setMultiSession($this->getFromContent("multi-session",false));
 			$sqlGateway->save($user);
 
 			$payload = $this->assemblePayload($user);
@@ -126,9 +127,6 @@
 				$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
 				$apiToken = $sqlGateway->findUnique("Wadapi\Authentication\APIToken",$searcher);
 				$sqlGateway->delete($apiToken);
-
-				//Delete Renewals associated with user
-				$sqlGateway->delete($user->getRenewals());
 
 				ResponseHandler::deleted("User: /".RequestHandler::getRequestURI().", has been removed.");
 			}else{
