@@ -54,16 +54,16 @@
         },
         {
             "name": "dadlian/wadapi-framework",
-            "version": "v1.0.3",
+            "version": "v1.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dadlian/wadapi-framework.git",
-                "reference": "20ae814b54f1989fb6e2c49e3f740ac519630089"
+                "reference": "da32ca19122375cfc69ff06dd8decd6d8e5f9cf9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dadlian/wadapi-framework/zipball/20ae814b54f1989fb6e2c49e3f740ac519630089",
-                "reference": "20ae814b54f1989fb6e2c49e3f740ac519630089",
+                "url": "https://api.github.com/repos/dadlian/wadapi-framework/zipball/da32ca19122375cfc69ff06dd8decd6d8e5f9cf9",
+                "reference": "da32ca19122375cfc69ff06dd8decd6d8e5f9cf9",
                 "shasum": ""
             },
             "require": {
@@ -97,7 +97,7 @@
                 "php",
                 "wadapi"
             ],
-            "time": "2019-02-15T22:35:19+00:00"
+            "time": "2019-02-22T20:40:30+00:00"
         }
     ],
     "packages-dev": [],
