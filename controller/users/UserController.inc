@@ -6,6 +6,7 @@
 	use Wadapi\Persistence\SQLGateway;
 	use Wadapi\Persistence\Searcher;
 	use Wadapi\Persistence\Sorter;
+	use Wadapi\Persistence\Criterion;
 
 	abstract class UserController extends ChanticoController{
 		public function execute(){
@@ -58,7 +59,7 @@
 			}
 
 			$options = RequestHandler::getQueryParameter("options");
-			if($options && !preg_match("/^\w+~[\w:\/\-\.@]+(,\w+~[\w:\/\-\.@]+)*$/",$options)){
+			if($options && !preg_match("/^(,?[\w\-]+~[\w:\/\-\.@]+)+$/",$options)){
 				$invalidQueryParameters[] = "options";
 			}
 
@@ -76,33 +77,37 @@
 			$options = RequestHandler::getQueryParameter("options");
 			$access = RequestHandler::getQueryParameter("access");
 
-			$usernameConditions = array();
-			foreach(explode(",",$usernames) as $username){
-				$username = strtolower($username);
-				$usernameConditions[] = "username LIKE '$username'";
+			if($usernames){
+				$usernameConditions = array();
+				foreach(explode(",",$usernames) as $username){
+					$username = strtolower($username);
+					$usernameConditions[] = "username LIKE '$username'";
+				}
+
+				if($usernameConditions){
+					$whereParams[] =  "(".implode(" OR ",$usernameConditions).")";
+				}
 			}
 
-			if($usernameConditions){
-				$whereParams[] =  "(".implode(" OR ",$usernameConditions).")";
-			}
+			if($options){
+				$optionsList = explode(",",$options);
+				$optionConditions = array();
+				foreach($optionsList as $option){
+					$parameters = preg_split("/~/",$option);
+					$jsonParameter = addslashes(json_encode($parameters[1]));
+					$optionConditions[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
+				}
 
-			$optionsList = explode(",",$options);
-			$optionConditions = array();
-			foreach($optionsList as $option){
-				$parameters = preg_split("/~/",$option);
-				$jsonParameter = addslashes(json_encode($parameters[1]));
-				$optionConditions[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
-			}
-
-			if($optionConditions){
-				$whereParams[] = "(".implode(" OR ",$optionConditions).")";
+				if($optionConditions){
+					$whereParams[] = "id IN (SELECT managedaccess FROM 	ManagedAccessOptions WHERE (".implode(" OR ",$optionConditions)."))";
+				}
 			}
 
 			if($access){
 				$whereParams[] = "accessEndpoint = '$access'";
 			}
 
-			$whereClause = $whereParams?("WHERE ".implode('AND',$whereParams)):"";
+			$whereClause = $whereParams?("WHERE ".implode(" AND ",$whereParams)):"";
 			$countResult = DatabaseAdministrator::execute("SELECT COUNT(id) as user FROM ManagedAccess $whereClause");
 			$count = $countResult[0]["user"];
 
@@ -115,33 +120,37 @@
 			$options = RequestHandler::getQueryParameter("options");
 			$access = RequestHandler::getQueryParameter("access");
 
-			$usernameConditions = array();
-			foreach(explode(",",$usernames) as $username){
-				$username = strtolower($username);
-				$usernameConditions[] = "username LIKE '$username'";
+			if($usernames){
+				$usernameConditions = array();
+				foreach(explode(",",$usernames) as $username){
+					$username = strtolower($username);
+					$usernameConditions[] = "username LIKE '$username'";
+				}
+
+				if($usernameConditions){
+					$whereParams[] =  "(".implode(" OR ",$usernameConditions).")";
+				}
 			}
 
-			if($usernameConditions){
-				$whereParams[] =  "(".implode(" OR ",$usernameConditions).")";
-			}
+			if($options){
+				$optionsList = explode(",",$options);
+				$optionConditions = array();
+				foreach($optionsList as $option){
+					$parameters = preg_split("/~/",$option);
+					$jsonParameter = addslashes(json_encode($parameters[1]));
+					$optionConditions[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
+				}
 
-			$optionsList = explode(",",$options);
-			$optionConditions = array();
-			foreach($optionsList as $option){
-				$parameters = preg_split("/~/",$option);
-				$jsonParameter = addslashes(json_encode($parameters[1]));
-				$optionConditions[] = "(name = '{$parameters[0]}' AND (value = '{$parameters[1]}' OR value = \"$jsonParameter\"))";
-			}
-
-			if($optionConditions){
-				$whereParams[] = "(".implode(" OR ",$optionConditions).")";
+				if($optionConditions){
+					$whereParams[] = "id IN (SELECT managedaccess FROM ManagedAccessOptions WHERE (".implode(" OR ",$optionConditions)."))";
+				}
 			}
 
 			if($access){
 				$whereParams[] = "accessEndpoint = '$access'";
 			}
 
-			$whereClause = $whereParams?("WHERE ".implode('AND',$whereParams)):"";
+			$whereClause = $whereParams?("WHERE ".implode(" AND ",$whereParams)):"";
 			$results = DatabaseAdministrator::execute("SELECT id FROM ManagedAccess $whereClause");
 
 			$users = array();
@@ -151,7 +160,9 @@
 
 			$payload = array();
 			$sqlGateway = new SQLGateway();
-			foreach($sqlGateway->find("ManagedAccess",new Searcher(),new Sorter(),$count,$start,false) as $user){
+			$searcher = new Searcher();
+			$searcher->addCriterion("id",Criterion::EQUAL,$users);
+			foreach($sqlGateway->find("ManagedAccess",$searcher,new Sorter(),$count,$start,false) as $user){
 				$payload[] = $this->assemblePayload($user);
 			}
 
@@ -180,9 +191,7 @@
 				$options = array();
 				if($response['code'] == "200"){
 					foreach($response['body'] as $option => $value){
-						if(!in_array($option,array("self","tokens","active-token"))){
-							$options[$option] = json_encode($value);
-						}
+						$options[$option] = json_encode($value);
 					}
 				}
 
@@ -208,6 +217,7 @@
 				$realRole = $user->viewFromOptions("role");
 			}
 
+			$instanceUrl = SettingsManager::getSetting("wadapi-instance","url");
 			$payload = array(
 				"self"=>$user->getURI(),
 				"username"=>$user->getUsername(),

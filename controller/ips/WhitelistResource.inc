@@ -3,22 +3,28 @@
 	use Wadapi\Http\ResponseHandler;
 	use Wadapi\Persistence\SQLGateway;
 	use Wadapi\Persistence\Searcher;
+	use Wadapi\Persistence\Criterion;
 
 	class WhitelistResource extends ChanticoController{
-		protected function execute(){
-			parent::execute();
-
+		public function execute(){
 			$sqlGateway = new SQLGateway();
+			$searcher = new Searcher();
+			$searcher->addCriterion("title",Criterion::EQUAL,"whitelist");
+			$whitelist = $sqlGateway->findUnique("IPList",$searcher);
 
-			$whitelist = $this->getResourceObject("IPList","title","whitelist");
 			if(!$whitelist){
 				$sqlGateway->save(new IPList("whitelist"));
 			}
 
-			$blacklist = $this->getResourceObject("IPList","title","blacklist");
+			$searcher->clearCriteria();
+			$searcher->addCriterion("title",Criterion::EQUAL,"blacklist");
+			$blacklist = $sqlGateway->findUnique("IPList",$searcher);
+
 			if(!$blacklist){
 				$sqlGateway->save(new IPList("blacklist"));
 			}
+
+			parent::execute();
 		}
 
 		protected function get(){
@@ -81,6 +87,14 @@
 			);
 
 			return $payload;
+		}
+
+		protected function getRecordCount(){
+			return 0;
+		}
+
+		protected function buildPageEntries($start,$count){
+			return array();
 		}
 	}
 ?>

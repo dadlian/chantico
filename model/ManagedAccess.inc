@@ -23,7 +23,7 @@
 		/** @Integer */
 		protected $expires;
 
-		/** @Collection(type=@WadapiString) */
+		/** @Collection(type=@Text) */
 		protected $options;
 
 		/** @Collection(type=@WadapiObject(class='Renewal')) */
@@ -48,6 +48,10 @@
 			$eTag .= $this->getRefreshSecret();
 			$eTag .= $this->getAccessEndpoint();
 			$eTag .= $this->getExpires();
+
+			foreach($this->getOptions() as $option){
+				$eTag .= $option;
+			}
 
 			return md5($this->getModified().$eTag);
 		}

@@ -52,21 +52,15 @@
 
 			if(!$optionsInitialised){
 				$response = $this->sendInstanceGet($user->getAccessEndpoint());
-				$role = $response["body"]["role"];
-
-				foreach($response["body"] as $option => $value){
-					if(!in_array($option,array("self","tokens","active-token","role"))){
-						$options[$option] = $value;
-					}
-				}
+				$options = $response["body"];
 			}
 
 			//Echo old access endpoint
 			$instanceUrl = SettingsManager::getSetting("wadapi-instance","url");
-			$options['predecessor'] = $instanceUrl.$user->getAccessEndpoint();
+			$options['invalidated-token'] = $instanceUrl.$user->getAccessEndpoint();
 
 			//Create Fresh Access Tokens
-			$payload = json_encode(array_merge(array("role"=>$role),$options));
+			$payload = array_merge(array("role"=>$role),$options);
 			$response = $this->sendInstancePost("/access",$payload);
 
 			if($response['code'] == 400){
@@ -109,7 +103,7 @@
 			//Get user's APIToken
 			$searcher = new Searcher();
 			$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
-			$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
+			$apiToken = $sqlGateway->findUnique("Wadapi\Authentication\APIToken",$searcher);
 
 			//Update APIToken for User to Access its
 			$apiToken->setAccessKey(md5($user->getUsername()));

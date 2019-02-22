@@ -1,4 +1,5 @@
 <?php
+	use Wadapi\Authentication\APIToken;
 	use Wadapi\Http\ResponseHandler;
 	use Wadapi\System\SettingsManager;
 	use Wadapi\Persistence\SQLGateway;
@@ -28,10 +29,8 @@
 
 			$options = array();
 			if($response['code'] == 201){
-				foreach($response["body"] as $option => $value){
-					if(!in_array($option,array("self","tokens","active-token","role"))){
-						$options[$option] = $value;
-					}
+				foreach($response["body"]["profile"] as $option => $value){
+					$options[$option] = $value;
 				}
 			}
 
@@ -108,39 +107,41 @@
 			$templateSubject = SettingsManager::getSetting("notifications","new-user")["subject"];
 			$templateTokens = SettingsManager::getSetting("notifications","new-user")["tokens"];
 
-			$newAccountTemplate = file_get_contents(dirname(__FILE__)."/../../notifications/$templateFile");
-			preg_replace("/\{\{username\}\}/",$user->getUsername(),$newAccountTemplate);
-			preg_replace("/\{\{year\}\}/",date("Y"),$newAccountTemplate);
+			if($templateFile){
+				$newAccountTemplate = file_get_contents(dirname(__FILE__)."/../../notifications/$templateFile");
+				$newAccountTemplate = preg_replace("/\{\{username\}\}/",$user->getUsername(),$newAccountTemplate);
+				$newAccountTemplate = preg_replace("/\{\{year\}\}/",date("Y"),$newAccountTemplate);
 
-			foreach($templateTokens as $token){
-				preg_replace("/\{\{$token\}\}/",$options[$token],$newAccountTemplate);
+				foreach($templateTokens as $token){
+					$newAccountTemplate = preg_replace("/\{\{$token\}\}/",$options[$token],$newAccountTemplate);
+				}
+
+				//Replace Template Tokens
+				$firstName = array_key_exists('first-name',$options)?$options['first-name']:$user->getUsername();
+				$lastName = array_key_exists('last-name',$options)?$options['last-name']:"";
+				$email = array_key_exists('email',$options)?$options['email']:"";
+				$recipient = "$firstName $lastName $email";
+
+				$payload = array(
+					"to"=>$recipient,
+					"from"=> $notificationSender,
+					"subject"=>$templateSubject,
+					"html"=> $newAccountTemplate
+				);
+
+				$header = array(
+					'Content-Type: application/x-www-form-urlencoded'
+				);
+
+				$ch = curl_init($notificationUrl);
+				curl_setopt($ch, CURLOPT_HTTPHEADER,$header);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER,TRUE);
+				curl_setopt($ch, CURLOPT_POST,true);
+				curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($payload));
+				curl_setopt($ch, CURLOPT_FAILONERROR,false);
+				json_decode(curl_exec($ch),true);
+				curl_close($ch);
 			}
-
-			//Replace Template Tokens
-			$firstName = array_key_exists('first-name',$options)?$options['first-name']:$user->getUsername();
-			$lastName = array_key_exists('last-name',$options)?$options['last-name']:"";
-			$email = array_key_exists('email',$options)?$options['email']:"";
-			$recipient = "$firstName $lastName $email";
-
-			$payload = array(
-				"to"=>$recipient,
-				"from"=> $notificationSender,
-				"subject"=>$templateSubject,
-				"html"=> $newAccountTemplate
-			);
-
-			$header = array(
-				'Content-Type: application/x-www-form-urlencoded'
-			);
-
-			$ch = curl_init($notificationUrl);
-			curl_setopt($ch, CURLOPT_HTTPHEADER,$header);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER,TRUE);
-			curl_setopt($ch, CURLOPT_POST,true);
-			curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($payload));
-			curl_setopt($ch, CURLOPT_FAILONERROR,false);
-			json_decode(curl_exec($ch),true);
-			curl_close($ch);
 		}
 	}
 ?>

@@ -38,33 +38,35 @@
 			$templateFile = SettingsManager::getSetting("notifications","password-reset")["template"];
 			$templateSubject = SettingsManager::getSetting("notifications","password-reset")["subject"];
 
-			//Replace Template Tokens
-			$passwordResetTemplate = file_get_contents(dirname(__FILE__)."/../../notifications/$templateFile");
-			preg_replace("/\{\{recipient\}\}/",$this->getFromContent("recipient"),$passwordResetTemplate);
-			preg_replace("/\{\{code\}\}/",$reset->getCode(),$passwordResetTemplate);
-			preg_replace("/\{\{year\}\}/",date("Y"),$passwordResetTemplate);
+			if($templateFile){
+				//Replace Template Tokens
+				$passwordResetTemplate = file_get_contents(dirname(__FILE__)."/../../notifications/$templateFile");
+				$passwordResetTemplate = preg_replace("/\{\{recipient\}\}/",$this->getFromContent("recipient"),$passwordResetTemplate);
+				$passwordResetTemplate = preg_replace("/\{\{code\}\}/",$reset->getCode(),$passwordResetTemplate);
+				$passwordResetTemplate = preg_replace("/\{\{year\}\}/",date("Y"),$passwordResetTemplate);
 
-			$recipient = "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>";
+				$recipient = "{$this->getFromContent('recipient')} <{$this->getFromContent('email')}>";
 
-			$payload = array(
-				"to"=>$recipient,
-				"from"=> $notificationSender,
-				"subject"=>$templateSubject,
-				"html"=> $passwordResetTemplate
-			);
+				$payload = array(
+					"to"=>$recipient,
+					"from"=> $notificationSender,
+					"subject"=>$templateSubject,
+					"html"=> $passwordResetTemplate
+				);
 
-			$header = array(
-				'Content-Type: application/x-www-form-urlencoded'
-			);
+				$header = array(
+					'Content-Type: application/x-www-form-urlencoded'
+				);
 
-			$ch = curl_init($notificationUrl);
-			curl_setopt($ch, CURLOPT_HTTPHEADER,$header);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER,TRUE);
-			curl_setopt($ch, CURLOPT_POST,true);
-			curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($payload));
-			curl_setopt($ch, CURLOPT_FAILONERROR,false);
-			json_decode(curl_exec($ch),true);
-			curl_close($ch);
+				$ch = curl_init($notificationUrl);
+				curl_setopt($ch, CURLOPT_HTTPHEADER,$header);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER,TRUE);
+				curl_setopt($ch, CURLOPT_POST,true);
+				curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($payload));
+				curl_setopt($ch, CURLOPT_FAILONERROR,false);
+				json_decode(curl_exec($ch),true);
+				curl_close($ch);
+			}
 
 			$payload = $this->assemblePayload($reset);
 			ResponseHandler::created($payload,$reset->getURI());

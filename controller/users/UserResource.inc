@@ -37,25 +37,25 @@
 
 			//Update User Options
 			$userOptions = array();
-			$user->insertToOptions("role",$this->getFromContent("role"));
-			$userOptions["role"] = $this->getFromContent("role");
-			foreach($this->getFromContent("options",array()) as $option => $value){
-				$user->insertToOptions($option,$value?json_encode($value):$value);
-				$userOptions[$option] = $value;
+			foreach($user->getOptions() as $option => $value){
+				$userOptions[$option] = json_decode($value);
 			}
 
+			$user->insertToOptions("role",$this->getFromContent("role"));
+			$userOptions["role"] = $this->getFromContent("role");
+
 			if($user->isDirty("options")){
-				$payload = json_encode($userOptions);
-				$this->sendInstancePut($user->getAccessEndpoint(),$payload);
+				$this->sendInstancePut($user->getAccessEndpoint(),$userOptions);
 			}
 
 			//Update user password if necessary
 			$user->setAuthentication($authentication);
 			if($user->isDirty("authentication")){
-				$this->sendInstanceDelete($user->getAccessEndpoint(),$payload);
-
 				//Create Fresh Access Tokens
 				$payload = $userOptions;
+				$instanceUrl = SettingsManager::getSetting("wadapi-instance","url");
+
+				$payload['invalidated-token'] = $instanceUrl.$user->getAccessEndpoint();
 				$response = $this->sendInstancePost("access",$payload);
 
 				if($response['code'] == 400){
@@ -64,14 +64,15 @@
 					ResponseHandler::error("The server is misconfigured. Please contact a system administrator");
 				}
 
-				foreach($responseBody as $option => $value){
-					if(!in_array($option,array("self","tokens","active-token","role"))){
-						$user->insertToOptions($option,$value);
-					}
+				//Delete old token
+				$this->sendInstanceDelete($user->getAccessEndpoint());
+
+				foreach($response['body']['profile'] as $option => $value){
+					$user->insertToOptions($option,json_encode($value));
 				}
 
-				$accessEndpoint = parse_url($response['body']["self"],PHP_URL_PATH);
-				$tokensEndpoint = parse_url($response['body']["tokens"],PHP_URL_PATH);
+				$accessEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($instanceUrl))."/","",$response["body"]["self"]);
+				$tokensEndpoint = preg_replace("/".preg_replace("/\//","\/",preg_quote($instanceUrl))."/","",$response["body"]["tokens"]);
 				$accessKey = $response['body']["active-token"]["key"];
 				$refreshSecret = $response['body']["active-token"]["refresh"];
 
@@ -98,7 +99,7 @@
 			if($user->isDirty("username") || $user->isDirty("authentication")){
 				$searcher = new Searcher();
 				$searcher->addCriterion("accessKey",Criterion::EQUAL,md5(Photographer::getSnapshot($user,"username")));
-				$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
+				$apiToken = $sqlGateway->findUnique("Wadapi\Authentication\APIToken",$searcher);
 
 				$apiToken->setAccessKey(md5($user->getUsername()));
 				$apiToken->setAccessSecret($user->getAuthentication());
@@ -123,7 +124,7 @@
 				$sqlGateway = new SQLGateway();
 				$searcher = new Searcher();
 				$searcher->addCriterion("accessKey",Criterion::EQUAL,md5($user->getUsername()));
-				$apiToken = $sqlGateway->findUnique("APIToken",$searcher);
+				$apiToken = $sqlGateway->findUnique("Wadapi\Authentication\APIToken",$searcher);
 				$sqlGateway->delete($apiToken);
 
 				//Delete Renewals associated with user

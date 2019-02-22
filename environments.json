@@ -12,6 +12,11 @@
         },
         "logging": {
             "level": "debug"
+        },
+        "wadapi-instance":{
+          "url":"http://localhost/acym/api",
+          "key":"eae498cce35a97cc90d4b79d8d4c7eed",
+          "secret":"d93a64f2ffe5158c69154192183b6ad9"
         }
     },
     "production": {
@@ -27,6 +32,11 @@
         },
         "logging": {
             "level": ""
+        },
+        "wadapi-instance":{
+          "url":"https://api.antiguayachtshow.com/v1",
+          "key":"19a38e4464f272f06fda45654d2f6700",
+          "secret":"078d1d49224a046317dafebd22e088d7"
         }
     }
 }
