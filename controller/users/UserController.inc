@@ -174,29 +174,15 @@
 		}
 
 		protected function assemblePayload($user){
-			//Load User Options from API
-			$realOptions = array();
-			foreach($user->getOptions() as $option => $value){
-				if($option != "role"){
-					$realOptions[$option] = $value;
-				}
-			}
-
-			$optionsInitialised = sizeof($realOptions) > 0;
-			foreach($realOptions as $option){
-				if(!$option){
-					$optionsInitialised = false;
-					break;
-				}
-			}
-
-			if(!$optionsInitialised){
+			if(!array_key_exists("self",$user->getOptions())){
 				$response = $this->sendInstanceGet($user->getAccessEndpoint());
 				$options = array();
 				if($response['code'] == "200"){
-					foreach($response['body'] as $option => $value){
+					foreach($response['body']['profile'] as $option => $value){
 						$options[$option] = json_encode($value);
 					}
+
+					$options["role"] = json_encode($response['body']['role']);
 				}
 
 				$user->setOptions($options);
