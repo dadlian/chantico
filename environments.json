@@ -21,17 +21,17 @@
     },
     "production": {
         "database": {
-            "hostname": "",
-            "database": "",
-            "username": "",
-            "password": "",
-            "prefix": ""
+            "hostname": "localhost",
+            "database": "acym_auth",
+            "username": "acym_auth",
+            "password": "e(6TP:x87AZ&",
+            "prefix": "chantico"
         },
         "install": {
-            "url": ""
+            "url": "auth.antiguayachtshow.com/v1"
         },
         "logging": {
-            "level": ""
+            "level": "debug"
         },
         "wadapi-instance":{
           "url":"https://api.antiguayachtshow.com/v1",

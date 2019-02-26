@@ -7,8 +7,8 @@
   use Wadapi\Persistence\DatabaseAdministrator;
   use Wadapi\System\Janitor;
 
-  $apiId = "14915100262884";
-  DatabaseAdministrator::buildConnection("mywadapi.com","wadapi_sandbox","e=e%WGbqFkS3","wadapi_sandbox","chantico");
+  $apiId = "14915827114381";
+  DatabaseAdministrator::buildConnection("mywadapi.com","login_main","NLnai%IU7EEv","login_main","chantico");
 
   $resources = array();
   $apiTokens = array();
@@ -28,14 +28,14 @@
     $userOptions[] = DatabaseAdministrator::execute("SELECT * FROM ManagedAccessOptions WHERE managedaccess = '{$user['id']}'");
   }
 
-  DatabaseAdministrator::buildConnection("localhost","root","c0r1nTh14n","chantico","chantico");
+  DatabaseAdministrator::buildConnection("localhost","acym_auth","e(6TP:x87AZ&","acym_auth","chantico");
 
   foreach($resources as $resource){
     DatabaseAdministrator::execute("INSERT INTO Resource VALUES('{$resource['id']}','{$resource['created']}','{$resource['modified']}')");
   }
 
   foreach($apiTokens as $apiToken){
-    DatabaseAdministrator::execute("INSERT INTO APIToken VALUES('{$apiToken['id']}','{$apiToken['created']}','{$apiToken['modified']}','{$apiToken['role']}','{$apiToken['expires']}','{$apiToken['accessKey']}','{$apiToken['accessSecret']}','{$apiToken['refreshSecret']}','".($apiToken['disabled']?$apiToken['disabled']:0)."',NULL)");
+    DatabaseAdministrator::execute("INSERT INTO APIToken VALUES('{$apiToken['id']}','{$apiToken['created']}','{$apiToken['modified']}','{$apiToken['role']}','".($apiToken['expires']?$apiToken['expires']:0)."','{$apiToken['accessKey']}','{$apiToken['accessSecret']}','{$apiToken['refreshSecret']}','".($apiToken['disabled']?$apiToken['disabled']:0)."',NULL)");
   }
 
   foreach($users as $user){

@@ -1,5 +1,5 @@
 {
-    "environment": "development",
+    "environment": "production",
     "api": {
         "formats": "application\/json",
         "languages": "*",
