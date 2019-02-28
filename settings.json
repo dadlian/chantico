@@ -1,31 +1,31 @@
 {
-    "environment": "production",
+    "environment": "development",
     "api": {
         "formats": "application\/json",
         "languages": "*",
         "charsets": "utf-8",
         "roles": "administrator,user",
-        "utilitykey": "54ecaa950172a12d0e740f47225e7cd9"
+        "utilitykey": ""
     },
     "encryption":{
-      "salt":"T5WshJwpA5Ee97udYrpgv9"
+      "salt":""
     },
     "notifications":{
-      "url":"https://api:key-4d5d0be711735d4830f0ea72a38b0053@api.mailgun.net/v3/antiguacharteryachtmeeting.com/messages",
-      "sender":"Antigua Charter Yacht Meeting <noreply@antiguacharteryachtmeeting.com>",
+      "url":"https://api:key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@api.mailgun.net/v3/antiguacharteryachtmeeting.com/messages",
+      "sender":"Chantico <chantico@example.com>",
       "new-user":{
         "template":"new-user.html",
-        "subject":"Your new ACYM Account has been created",
-        "tokens":["first-name"]
+        "subject":"Your new account has been created",
+        "tokens":[]
       },
       "password-reset":{
         "template":"password-reset.html",
-        "subject":"Password Reset Confirmation Code",
+        "subject":"Your password reset confirmation code",
         "tokens":[]
       },
       "username-recovery":{
         "template":"username-recovery.html",
-        "subject":"Your TickeTing Username",
+        "subject":"Your requested username",
         "tokens":[]
       }
     }

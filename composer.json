@@ -1,5 +1,5 @@
 {
-    "name": "dadlian/wadapi",
+    "name": "dadlian/chantico",
     "type": "project",
     "require": {
         "dadlian/wadapi-framework": "^1.0"
