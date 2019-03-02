@@ -1,0 +1,11 @@
+{
+    "name": "chantico/scripts",
+    "description": "Scripts for the dadlian/chantico package",
+    "autoload": {
+        "psr-4": {
+            "Chantico\\": "src"
+        }
+    },
+    "version":"dev-master",
+    "type":"library"
+}

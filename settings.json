@@ -1,32 +1,32 @@
-  {
+{
     "environment": "development",
     "api": {
-        "formats": "application\/json",
+        "formats": "application/json",
         "languages": "*",
         "charsets": "utf-8",
         "roles": "administrator,user",
         "utilitykey": ""
     },
-    "encryption":{
-      "salt":""
+    "encryption": {
+        "salt": ""
     },
-    "notifications":{
-      "url":"https://api:key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@api.mailgun.net/v3/mydomain.com/messages",
-      "sender":"Chantico <chantico@example.com>",
-      "new-user":{
-        "template":"new-user.html",
-        "subject":"Your new account has been created",
-        "tokens":[]
-      },
-      "password-reset":{
-        "template":"password-reset.html",
-        "subject":"Your password reset confirmation code",
-        "tokens":[]
-      },
-      "username-recovery":{
-        "template":"username-recovery.html",
-        "subject":"Your requested username",
-        "tokens":[]
-      }
+    "notifications": {
+        "url": "https://api:key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@api.mailgun.net/v3/mydomain.com/messages",
+        "sender": "Chantico <chantico@example.com>",
+        "new-user": {
+            "template": "new-user.html",
+            "subject": "Your new account has been created",
+            "tokens": []
+        },
+        "password-reset": {
+            "template": "password-reset.html",
+            "subject": "Your password reset confirmation code",
+            "tokens": []
+        },
+        "username-recovery": {
+            "template": "username-recovery.html",
+            "subject": "Your requested username",
+            "tokens": []
+        }
     }
 }

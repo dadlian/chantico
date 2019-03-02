@@ -1,6 +1,7 @@
 <?php
   namespace Chantico;
 
+  use Composer\Script\Event;
   use Wadapi\System\ComposerScripts;
 
   class Installer extends ComposerScripts{
@@ -23,8 +24,6 @@
       }
 
       private static function configureChantico($environment, Event $event){
-        echo "Configuring managed Wadapi instance for $environment environment\n";
-
         $environmentFile = $event->getComposer()->getConfig()->get("vendor-dir")."/../environments.json";
         $environments = json_decode(file_get_contents($environmentFile),true);
 
@@ -39,20 +38,26 @@
           "secret"=>$secret?$secret:""
         ];
 
-        file_put_contents($environmentFile,json_encode($environments,JSON_PRETTY_PRINT));
-        echo "Successfully Configured managed Wadapi instance for $environment environment\n";
+        file_put_contents($environmentFile,json_encode($environments,JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
       }
 
       private static function generateSalt(Event $event){
         $settingsFile = $event->getComposer()->getConfig()->get("vendor-dir")."/../settings.json";
         $settings = json_decode(file_get_contents($settingsFile),true);
 
-        $salt = md5(microtime(true) * rand() * rand());
+        $characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        $salt = "";
+        $saltLength = 22;
+
+        for($i=0; $i < $saltLength; $i++){
+          $salt .= $characters[mt_rand(0, strlen($characters) - 1)];
+        }
+
         $settings["encryption"] = [
           "salt" => $salt
         ];
 
-        file_put_contents($settingsFile,json_encode($settings,JSON_PRETTY_PRINT));
+        file_put_contents($settingsFile,json_encode($settings,JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         echo "Successfully Generated Encryption Salt: [$salt]\n";
       }
   }

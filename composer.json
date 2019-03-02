@@ -1,9 +1,6 @@
 {
     "name": "dadlian/chantico",
     "type": "project",
-    "require": {
-        "dadlian/wadapi-framework": "^1.0"
-    },
     "license": "MIT",
     "authors": [
         {
@@ -11,7 +8,16 @@
             "email": "sven@kycsar.com"
         }
     ],
+    "repositories": [{
+        "type": "path",
+        "url": "bin/chantico/scripts"
+      }
+    ],
+    "require": {
+        "dadlian/wadapi-framework": "^1.0",
+        "chantico/scripts": "dev-master"
+    },
     "scripts":{
-      "post-create-project-cmd": "Wadapi\\System\\ComposerScripts::setup"
+      "post-create-project-cmd": "Chantico\\Installer::setup"
     }
 }

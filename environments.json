@@ -13,10 +13,10 @@
         "logging": {
             "level": ""
         },
-        "wadapi-instance":{
-          "url":"",
-          "key":"",
-          "secret":""
+        "wadapi-instance": {
+            "url": "",
+            "key": "",
+            "secret": ""
         }
     },
     "production": {
@@ -33,10 +33,10 @@
         "logging": {
             "level": ""
         },
-        "wadapi-instance":{
-          "url":"",
-          "key":"",
-          "secret":""
+        "wadapi-instance": {
+            "url": "",
+            "key": "",
+            "secret": ""
         }
     }
 }
