@@ -15,7 +15,7 @@
     ],
     "require": {
         "dadlian/wadapi-framework": "^1.0",
-        "chantico/scripts": "dev-master"
+        "chantico/scripts": "dev-master@dev"
     },
     "scripts":{
       "post-create-project-cmd": "Chantico\\Installer::setup"
