@@ -1,4 +1,4 @@
-{
+  {
     "environment": "development",
     "api": {
         "formats": "application\/json",
@@ -11,7 +11,7 @@
       "salt":""
     },
     "notifications":{
-      "url":"https://api:key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@api.mailgun.net/v3/antiguacharteryachtmeeting.com/messages",
+      "url":"https://api:key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@api.mailgun.net/v3/mydomain.com/messages",
       "sender":"Chantico <chantico@example.com>",
       "new-user":{
         "template":"new-user.html",
