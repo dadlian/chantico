@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "116c342e0cbd0dd58bb4946adfd88142",
+    "content-hash": "4588d486cda237aac2da47ef029c48b8",
     "packages": [
         {
             "name": "chantico/scripts",
@@ -71,16 +71,16 @@
         },
         {
             "name": "dadlian/wadapi-framework",
-            "version": "v1.0.4",
+            "version": "v1.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dadlian/wadapi-framework.git",
-                "reference": "da32ca19122375cfc69ff06dd8decd6d8e5f9cf9"
+                "reference": "372ba0eac7281feae68d31ac07dc9f14fc92b809"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dadlian/wadapi-framework/zipball/da32ca19122375cfc69ff06dd8decd6d8e5f9cf9",
-                "reference": "da32ca19122375cfc69ff06dd8decd6d8e5f9cf9",
+                "url": "https://api.github.com/repos/dadlian/wadapi-framework/zipball/372ba0eac7281feae68d31ac07dc9f14fc92b809",
+                "reference": "372ba0eac7281feae68d31ac07dc9f14fc92b809",
                 "shasum": ""
             },
             "require": {
@@ -114,7 +114,7 @@
                 "php",
                 "wadapi"
             ],
-            "time": "2019-02-22T20:40:30+00:00"
+            "time": "2019-03-05T00:08:39+00:00"
         }
     ],
     "packages-dev": [],
