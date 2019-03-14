@@ -174,21 +174,20 @@
 		}
 
 		protected function assemblePayload($user){
-			if(!array_key_exists("self",$user->getOptions())){
-				$response = $this->sendInstanceGet($user->getAccessEndpoint());
-				$options = array();
-				if($response['code'] == "200"){
-					foreach($response['body']['profile'] as $option => $value){
-						$options[$option] = json_encode($value);
-					}
-
-					$options["role"] = json_encode($response['body']['role']);
+			//Add some mechanism for knowing to reload options rather than doing it all-time
+			$response = $this->sendInstanceGet($user->getAccessEndpoint());
+			$options = array();
+			if($response['code'] == "200"){
+				foreach($response['body']['profile'] as $option => $value){
+					$options[$option] = json_encode($value);
 				}
-
-				$user->setOptions($options);
-				$sqlGateway = new SQLGateway();
-				$sqlGateway->save($user);
+	
+				$options["role"] = json_encode($response['body']['role']);
 			}
+	
+			$user->setOptions($options);
+			$sqlGateway = new SQLGateway();
+			$sqlGateway->save($user);
 
 			$options = array();
 			foreach($user->getOptions() as $option => $value){

@@ -52,7 +52,9 @@
 			$eTag .= $this->getAccessEndpoint();
 			$eTag .= $this->getExpires();
 
-			foreach($this->getOptions() as $option){
+			$options = $this->getOptions();
+			ksort($options);
+			foreach($options as $option){
 				$eTag .= $option;
 			}
 
